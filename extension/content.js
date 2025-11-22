@@ -82,6 +82,11 @@ async function init() {
 
 // Handle text/element selection
 function handleSelection(event) {
+  // Ignore clicks inside the flag popup
+  if (flagPopup && flagPopup.contains(event.target)) {
+    return;
+  }
+
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
 

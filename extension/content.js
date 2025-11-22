@@ -283,8 +283,7 @@ async function submitFlag() {
     confidence: confidence,
     note: note,
     selector: selector,
-    username: username,
-    timestamp: new Date().toISOString()
+    username: username
   };
 
   try {

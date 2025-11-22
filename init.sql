@@ -1,3 +1,6 @@
+-- Create supabase_admin user
+CREATE USER supabase_admin WITH PASSWORD 'postgres' SUPERUSER;
+
 -- Simple table for flagged content
 CREATE TABLE IF NOT EXISTS flagged_content (
   id SERIAL PRIMARY KEY,
@@ -9,6 +12,7 @@ CREATE TABLE IF NOT EXISTS flagged_content (
   confidence VARCHAR(20) DEFAULT 'certain' CHECK (confidence IN ('certain', 'uncertain')),
   note TEXT,
   selector TEXT,
+  username TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 

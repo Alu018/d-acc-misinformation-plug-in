@@ -37,14 +37,27 @@
 
       <section class="settings-panel" id="settings-panel" style="display: none;">
         <h3>Database Settings</h3>
-        <div class="form-group">
-          <label for="supabase-url">Supabase URL:</label>
-          <input type="text" id="supabase-url" placeholder="http://localhost:54321">
+        
+        <div class="form-group mode-selector">
+          <label class="radio-label">
+            <input type="radio" name="server-mode" value="global" checked> Global Server
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="server-mode" value="manual"> Manual Server
+          </label>
         </div>
-        <div class="form-group">
-          <label for="supabase-key">Supabase Key:</label>
-          <input type="password" id="supabase-key" placeholder="Your Supabase anon key">
+
+        <div id="manual-settings" style="display: none;">
+          <div class="form-group">
+            <label for="supabase-url">Supabase URL:</label>
+            <input type="text" id="supabase-url" placeholder="http://localhost:54321">
+          </div>
+          <div class="form-group">
+            <label for="supabase-key">Supabase Key:</label>
+            <input type="password" id="supabase-key" placeholder="Your Supabase anon key">
+          </div>
         </div>
+
         <button id="save-settings-btn" class="btn btn-primary">Save Settings</button>
       </section>
 

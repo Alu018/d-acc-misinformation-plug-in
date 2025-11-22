@@ -1,4 +1,4 @@
 {
-  "supabaseUrl": "http://localhost:3000",
-  "supabaseKey": ""
+  "supabaseUrl": "https://aujqbnyprthwfdqnefwc.supabase.co",
+  "supabaseKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1anFibnlwcnRod2ZkcW5lZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTgxMDQsImV4cCI6MjA3OTM3NDEwNH0.yUUMzCwfw4L9LOmH2vUtggNsz1QvsweR7IKfxl9_UrI"
 }

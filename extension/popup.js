@@ -13,10 +13,26 @@ async function init() {
   document.getElementById('refresh-btn').addEventListener('click', refreshFlags);
   document.getElementById('settings-btn').addEventListener('click', toggleSettings);
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+  
+  const modeRadios = document.querySelectorAll('input[name="server-mode"]');
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', updateManualSettingsVisibility);
+  });
 
-  // Load settings into form
-  document.getElementById('supabase-url').value = currentConfig.supabaseUrl || '';
-  document.getElementById('supabase-key').value = currentConfig.supabaseKey || '';
+  // Set initial UI state
+  const serverMode = currentConfig.serverMode || 'global';
+  document.querySelector(`input[name="server-mode"][value="${serverMode}"]`).checked = true;
+  updateManualSettingsVisibility();
+
+  // Load settings into form (manual settings)
+  document.getElementById('supabase-url').value = currentConfig.manualSupabaseUrl || '';
+  document.getElementById('supabase-key').value = currentConfig.manualSupabaseKey || '';
+}
+
+function updateManualSettingsVisibility() {
+  const mode = document.querySelector('input[name="server-mode"]:checked').value;
+  const manualSettings = document.getElementById('manual-settings');
+  manualSettings.style.display = mode === 'manual' ? 'block' : 'none';
 }
 
 // Load config
@@ -25,21 +41,34 @@ async function loadConfig() {
     const response = await fetch(chrome.runtime.getURL('config.json'));
     const config = await response.json();
 
-    // Check if user has saved custom settings
-    const result = await chrome.storage.local.get(['supabaseUrl', 'supabaseKey']);
-    if (result.supabaseUrl) {
-      config.supabaseUrl = result.supabaseUrl;
-    }
-    if (result.supabaseKey) {
-      config.supabaseKey = result.supabaseKey;
+    // Check storage for mode and manual settings
+    const storage = await chrome.storage.local.get(['serverMode', 'manualSupabaseUrl', 'manualSupabaseKey', 'supabaseUrl', 'supabaseKey']);
+    
+    const serverMode = storage.serverMode || 'global';
+    config.serverMode = serverMode;
+    
+    // Store manual values for UI
+    config.manualSupabaseUrl = storage.manualSupabaseUrl || storage.supabaseUrl || '';
+    config.manualSupabaseKey = storage.manualSupabaseKey || storage.supabaseKey || '';
+
+    // Override with manual settings if in manual mode
+    if (serverMode === 'manual') {
+      if (config.manualSupabaseUrl) {
+        config.supabaseUrl = config.manualSupabaseUrl;
+      }
+      if (config.manualSupabaseKey) {
+        config.supabaseKey = config.manualSupabaseKey;
+      }
     }
 
     return config;
   } catch (error) {
     console.error('Error loading config:', error);
+    // Return safe default with global assumption
     return {
-      supabaseUrl: 'http://localhost:54321',
-      supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+      supabaseUrl: 'https://aujqbnyprthwfdqnefwc.supabase.co',
+      supabaseKey: '', 
+      serverMode: 'global'
     };
   }
 }
@@ -158,26 +187,52 @@ function toggleSettings() {
 
 // Save settings
 async function saveSettings() {
-  const supabaseUrl = document.getElementById('supabase-url').value.trim();
-  const supabaseKey = document.getElementById('supabase-key').value.trim();
+  const mode = document.querySelector('input[name="server-mode"]:checked').value;
+  const updates = { serverMode: mode };
+  
+  if (mode === 'manual') {
+    const supabaseUrl = document.getElementById('supabase-url').value.trim();
+    const supabaseKey = document.getElementById('supabase-key').value.trim();
 
-  if (!supabaseUrl || !supabaseKey) {
-    alert('Please fill in all fields');
-    return;
-  }
-
-  try {
-    await chrome.storage.local.set({
-      supabaseUrl,
-      supabaseKey
-    });
-
+    if (!supabaseUrl || !supabaseKey) {
+      alert('Please fill in all fields for Manual Server');
+      return;
+    }
+    
+    updates.manualSupabaseUrl = supabaseUrl;
+    updates.manualSupabaseKey = supabaseKey;
+    
+    // Also update legacy keys for compatibility if needed, but primarily use manual* keys
+    // updates.supabaseUrl = supabaseUrl; 
+    // updates.supabaseKey = supabaseKey;
+    
     currentConfig.supabaseUrl = supabaseUrl;
     currentConfig.supabaseKey = supabaseKey;
+    currentConfig.manualSupabaseUrl = supabaseUrl;
+    currentConfig.manualSupabaseKey = supabaseKey;
+  } else {
+    // Global mode: Restore global config
+    try {
+      const response = await fetch(chrome.runtime.getURL('config.json'));
+      const globalConfig = await response.json();
+      currentConfig.supabaseUrl = globalConfig.supabaseUrl;
+      currentConfig.supabaseKey = globalConfig.supabaseKey;
+    } catch (e) {
+      console.error("Failed to restore global config", e);
+    }
+  }
+
+  currentConfig.serverMode = mode;
+
+  try {
+    await chrome.storage.local.set(updates);
 
     const btn = document.getElementById('save-settings-btn');
     btn.textContent = 'Saved!';
     btn.style.backgroundColor = '#4caf50';
+    
+    // Reload flags with new settings
+    await loadFlagCount();
 
     setTimeout(() => {
       btn.textContent = 'Save Settings';

@@ -549,13 +549,30 @@ async function getFlagsForPage(pageUrl) {
 async function loadConfig() {
   try {
     const response = await fetch(chrome.runtime.getURL('config.json'));
-    return await response.json();
+    const config = await response.json();
+
+    // Check storage for mode and manual settings
+    const storage = await chrome.storage.local.get(['serverMode', 'manualSupabaseUrl', 'manualSupabaseKey', 'supabaseUrl', 'supabaseKey']);
+    
+    const serverMode = storage.serverMode || 'global';
+    
+    if (serverMode === 'manual') {
+      // Use manual settings if available
+      if (storage.manualSupabaseUrl || storage.supabaseUrl) {
+         config.supabaseUrl = storage.manualSupabaseUrl || storage.supabaseUrl;
+      }
+      if (storage.manualSupabaseKey || storage.supabaseKey) {
+         config.supabaseKey = storage.manualSupabaseKey || storage.supabaseKey;
+      }
+    }
+
+    return config;
   } catch (error) {
     console.error('Error loading config:', error);
     // Return default config
     return {
-      supabaseUrl: 'http://localhost:54321',
-      supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+      supabaseUrl: 'https://aujqbnyprthwfdqnefwc.supabase.co',
+      supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1anFibnlwcnRod2ZkcW5lZndjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTgxMDQsImV4cCI6MjA3OTM3NDEwNH0.yUUMzCwfw4L9LOmH2vUtggNsz1QvsweR7IKfxl9_UrI'
     };
   }
 }

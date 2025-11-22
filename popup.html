@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Misinformation Detector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Misinformation Detector</h1>
+    </header>
+
+    <main>
+      <section class="stats">
+        <div class="stat-item">
+          <span class="stat-number" id="flag-count">0</span>
+          <span class="stat-label">Flags on this page</span>
+        </div>
+      </section>
+
+      <section class="instructions">
+        <h2>How to use:</h2>
+        <ol>
+          <li>Highlight text, or click on an image/video</li>
+          <li>Select the flag type from the popup</li>
+          <li>Submit to flag the content</li>
+        </ol>
+        <p class="info-text">Other users will see highlighted content when they visit this page.</p>
+      </section>
+
+      <section class="actions">
+        <button id="refresh-btn" class="btn btn-primary">Refresh Flags</button>
+        <button id="settings-btn" class="btn btn-secondary">Settings</button>
+      </section>
+
+      <section class="settings-panel" id="settings-panel" style="display: none;">
+        <h3>Database Settings</h3>
+        <div class="form-group">
+          <label for="supabase-url">Supabase URL:</label>
+          <input type="text" id="supabase-url" placeholder="http://localhost:54321">
+        </div>
+        <div class="form-group">
+          <label for="supabase-key">Supabase Key:</label>
+          <input type="password" id="supabase-key" placeholder="Your Supabase anon key">
+        </div>
+        <button id="save-settings-btn" class="btn btn-primary">Save Settings</button>
+      </section>
+
+      <section class="flagged-items">
+        <h3>Flagged Content on this Page:</h3>
+        <div id="flagged-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

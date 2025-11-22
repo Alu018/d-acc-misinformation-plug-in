@@ -89,6 +89,14 @@
   resize: vertical;
 }
 
+.misinfo-char-count {
+  font-size: 11px;
+  color: #666;
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
+
 .misinfo-popup-buttons {
   display: flex;
   gap: 8px;

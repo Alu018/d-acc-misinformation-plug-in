@@ -4,6 +4,67 @@ let selectedElement = null;
 let selectedContent = null;
 let flagPopup = null;
 
+// Validation constants
+const MAX_CONTENT_LENGTH = 102400; // 100KB
+const MAX_NOTE_LENGTH = 5120; // 5KB
+const MAX_URL_LENGTH = 2048; // 2KB
+const MAX_SELECTOR_LENGTH = 2048; // 2KB
+const VALID_FLAG_TYPES = ['misinformation', 'harmful', 'misleading', 'other'];
+const VALID_CONTENT_TYPES = ['text', 'image', 'video', 'other'];
+const VALID_URL_SCHEMES = ['http:', 'https:'];
+
+// Validation functions
+function validateContent(content) {
+  if (!content || content.length === 0) {
+    return { valid: false, error: 'Content cannot be empty' };
+  }
+  if (content.length > MAX_CONTENT_LENGTH) {
+    return { valid: false, error: `Content too long (max ${MAX_CONTENT_LENGTH} characters)` };
+  }
+  return { valid: true };
+}
+
+function validateNote(note) {
+  if (note && note.length > MAX_NOTE_LENGTH) {
+    return { valid: false, error: `Note too long (max ${MAX_NOTE_LENGTH} characters)` };
+  }
+  return { valid: true };
+}
+
+function validateUrl(url) {
+  if (!url || url.length === 0) {
+    return { valid: false, error: 'URL cannot be empty' };
+  }
+  if (url.length > MAX_URL_LENGTH) {
+    return { valid: false, error: `URL too long (max ${MAX_URL_LENGTH} characters)` };
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    if (!VALID_URL_SCHEMES.includes(parsedUrl.protocol)) {
+      return { valid: false, error: `Invalid URL scheme (only ${VALID_URL_SCHEMES.join(', ')} allowed)` };
+    }
+  } catch (error) {
+    return { valid: false, error: 'Invalid URL format' };
+  }
+
+  return { valid: true };
+}
+
+function validateFlagType(type) {
+  if (!VALID_FLAG_TYPES.includes(type)) {
+    return { valid: false, error: `Invalid flag type (must be one of: ${VALID_FLAG_TYPES.join(', ')})` };
+  }
+  return { valid: true };
+}
+
+function validateContentType(type) {
+  if (!VALID_CONTENT_TYPES.includes(type)) {
+    return { valid: false, error: `Invalid content type (must be one of: ${VALID_CONTENT_TYPES.join(', ')})` };
+  }
+  return { valid: true };
+}
+
 // Initialize the extension
 async function init() {
   // Load existing flags for this page
@@ -29,6 +90,12 @@ function handleSelection(event) {
     // Check if clicked element is an image or video
     const target = event.target;
     if (target.tagName === 'IMG') {
+      // Validate that image has a source
+      if (!target.src || target.src.length === 0) {
+        showNotification('Cannot flag image without source', 'error');
+        return;
+      }
+
       selectedElement = target;
       selectedContent = {
         src: target.src,
@@ -37,9 +104,17 @@ function handleSelection(event) {
       };
       showFlagPopup(event.pageX, event.pageY);
     } else if (target.tagName === 'VIDEO') {
+      const videoSrc = target.src || target.currentSrc;
+
+      // Validate that video has a source
+      if (!videoSrc || videoSrc.length === 0) {
+        showNotification('Cannot flag video without source', 'error');
+        return;
+      }
+
       selectedElement = target;
       selectedContent = {
-        src: target.src || target.currentSrc,
+        src: videoSrc,
         type: 'video'
       };
       showFlagPopup(event.pageX, event.pageY);
@@ -66,7 +141,10 @@ function showFlagPopup(x, y) {
         <option value="misleading">Misleading Content</option>
         <option value="other">Other</option>
       </select>
-      <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)"></textarea>
+      <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)" maxlength="${MAX_NOTE_LENGTH}"></textarea>
+      <div class="misinfo-char-count">
+        <span id="misinfo-note-count">0</span>/${MAX_NOTE_LENGTH} characters
+      </div>
       <div class="misinfo-popup-buttons">
         <button id="misinfo-flag-submit">Flag</button>
         <button id="misinfo-flag-cancel">Cancel</button>
@@ -83,6 +161,13 @@ function showFlagPopup(x, y) {
   // Add event listeners
   document.getElementById('misinfo-flag-submit').addEventListener('click', submitFlag);
   document.getElementById('misinfo-flag-cancel').addEventListener('click', closePopup);
+
+  // Update character count
+  const noteTextarea = document.getElementById('misinfo-flag-note');
+  const noteCount = document.getElementById('misinfo-note-count');
+  noteTextarea.addEventListener('input', () => {
+    noteCount.textContent = noteTextarea.value.length;
+  });
 
   // Close popup when clicking outside
   setTimeout(() => {
@@ -117,13 +202,55 @@ async function submitFlag() {
     return;
   }
 
+  // Validate flag type
+  const flagTypeValidation = validateFlagType(flagType);
+  if (!flagTypeValidation.valid) {
+    showNotification(flagTypeValidation.error, 'error');
+    return;
+  }
+
+  // Validate content type
+  const contentTypeValidation = validateContentType(selectedContent.type);
+  if (!contentTypeValidation.valid) {
+    showNotification(contentTypeValidation.error, 'error');
+    return;
+  }
+
+  // Validate content
+  const content = selectedContent.text || selectedContent.src;
+  const contentValidation = validateContent(content);
+  if (!contentValidation.valid) {
+    showNotification(contentValidation.error, 'error');
+    return;
+  }
+
+  // Validate note
+  const noteValidation = validateNote(note);
+  if (!noteValidation.valid) {
+    showNotification(noteValidation.error, 'error');
+    return;
+  }
+
+  // Validate URLs
+  const urlValidation = validateUrl(window.location.href);
+  if (!urlValidation.valid) {
+    showNotification(urlValidation.error, 'error');
+    return;
+  }
+
   // Create CSS selector for the element
   const selector = generateSelector(selectedElement);
+
+  // Validate selector length
+  if (selector && selector.length > MAX_SELECTOR_LENGTH) {
+    showNotification(`Selector too long (max ${MAX_SELECTOR_LENGTH} characters)`, 'error');
+    return;
+  }
 
   const flagData = {
     url: window.location.href,
     page_url: window.location.origin + window.location.pathname,
-    content: selectedContent.text || selectedContent.src,
+    content: content,
     content_type: selectedContent.type,
     flag_type: flagType,
     note: note,

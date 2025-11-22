@@ -67,6 +67,9 @@ function validateContentType(type) {
 
 // Initialize the extension
 async function init() {
+  // Initialize username if not already set
+  await initializeUsername();
+
   // Check if current URL is flagged
   await checkCurrentUrlFlag();
 
@@ -263,6 +266,9 @@ async function submitFlag() {
     return;
   }
 
+  // Get username
+  const username = await getUsername();
+
   const flagData = {
     url: window.location.href,
     page_url: window.location.origin + window.location.pathname,
@@ -272,6 +278,7 @@ async function submitFlag() {
     confidence: confidence,
     note: note,
     selector: selector,
+    username: username,
     timestamp: new Date().toISOString()
   };
 
@@ -737,12 +744,16 @@ async function submitLinkFlag() {
     return;
   }
 
+  // Get username
+  const username = await getUsername();
+
   const flagData = {
     url: linkFlagData.url,
     flag_type: flagType,
     confidence: confidence,
     note: note,
     flagged_by_url: window.location.href,
+    username: username,
     created_at: new Date().toISOString()
   };
 

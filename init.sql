@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS flagged_content (
   url TEXT NOT NULL,
   page_url TEXT NOT NULL,
   content TEXT NOT NULL,
-  content_type VARCHAR(50) NOT NULL,
-  flag_type VARCHAR(50) NOT NULL,
+  content_type VARCHAR(50) NOT NULL CHECK (content_type IN ('text', 'image', 'video', 'other')),
+  flag_type VARCHAR(50) NOT NULL CHECK (flag_type IN ('scam', 'misinformation', 'other')),
   note TEXT,
   selector TEXT,
   created_at TIMESTAMP DEFAULT NOW()

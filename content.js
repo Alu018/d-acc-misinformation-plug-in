@@ -9,7 +9,7 @@ const MAX_CONTENT_LENGTH = 102400; // 100KB
 const MAX_NOTE_LENGTH = 5120; // 5KB
 const MAX_URL_LENGTH = 2048; // 2KB
 const MAX_SELECTOR_LENGTH = 2048; // 2KB
-const VALID_FLAG_TYPES = ['misinformation', 'harmful', 'misleading', 'other'];
+const VALID_FLAG_TYPES = ['scam', 'misinformation', 'other'];
 const VALID_CONTENT_TYPES = ['text', 'image', 'video', 'other'];
 const VALID_URL_SCHEMES = ['http:', 'https:'];
 
@@ -136,9 +136,8 @@ function showFlagPopup(x, y) {
     <div class="misinfo-popup-content">
       <h3>Flag Content</h3>
       <select id="misinfo-flag-type">
-        <option value="misinformation">AI Misinformation</option>
-        <option value="harmful">Harmful Information</option>
-        <option value="misleading">Misleading Content</option>
+        <option value="scam">Scam</option>
+        <option value="misinformation">Misinformation</option>
         <option value="other">Other</option>
       </select>
       <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)" maxlength="${MAX_NOTE_LENGTH}"></textarea>
@@ -308,7 +307,7 @@ function generateSelector(element) {
 }
 
 // Highlight an element
-function highlightElement(element, flagType) {
+function highlightElement(element, flagType, flagData = null) {
   if (!element) return;
 
   if (element.nodeType === Node.TEXT_NODE) {
@@ -318,20 +317,108 @@ function highlightElement(element, flagType) {
   element.classList.add('misinfo-highlighted');
   element.setAttribute('data-flag-type', flagType);
 
-  // Add click listener to show flag info
-  element.addEventListener('click', (e) => {
+  // Store flag data for hover popup
+  if (flagData) {
+    element.setAttribute('data-flag-note', flagData.note || '');
+    element.setAttribute('data-flag-date', flagData.created_at || flagData.timestamp || '');
+  }
+
+  // Add hover listeners to show flag info popup
+  element.addEventListener('mouseenter', (e) => {
     if (element.classList.contains('misinfo-highlighted')) {
-      e.stopPropagation();
-      showFlagInfo(element);
+      showFlagInfoPopup(element, e);
     }
+  });
+
+  element.addEventListener('mouseleave', () => {
+    hideFlagInfoPopup();
   });
 }
 
-// Show information about a flag
+// Show information about a flag (deprecated - keeping for compatibility)
 function showFlagInfo(element) {
   const flagType = element.getAttribute('data-flag-type');
-  const message = `This content has been flagged as: ${flagType}`;
+  const note = element.getAttribute('data-flag-note');
+
+  let message = `This content has been flagged as: ${flagType}`;
+  if (note && note.trim()) {
+    message += `\n\nReason: ${note}`;
+  }
+
   showNotification(message, 'info');
+}
+
+// Show flag info popup on hover
+let flagInfoPopup = null;
+
+function showFlagInfoPopup(element, event) {
+  // Remove existing popup
+  hideFlagInfoPopup();
+
+  const flagType = element.getAttribute('data-flag-type');
+  const note = element.getAttribute('data-flag-note');
+  const date = element.getAttribute('data-flag-date');
+
+  // Create popup
+  flagInfoPopup = document.createElement('div');
+  flagInfoPopup.className = 'misinfo-flag-info-popup';
+
+  let dateStr = '';
+  if (date) {
+    const flagDate = new Date(date);
+    dateStr = flagDate.toLocaleDateString() + ' ' + flagDate.toLocaleTimeString();
+  }
+
+  flagInfoPopup.innerHTML = `
+    <div class="misinfo-flag-info-content">
+      <div class="misinfo-flag-info-header">
+        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}">${flagType}</span>
+      </div>
+      ${note ? `<div class="misinfo-flag-info-note">${escapeHtml(note)}</div>` : '<div class="misinfo-flag-info-note-empty">No additional notes</div>'}
+      ${dateStr ? `<div class="misinfo-flag-info-date">Flagged: ${dateStr}</div>` : ''}
+    </div>
+  `;
+
+  document.body.appendChild(flagInfoPopup);
+
+  // Position popup near the element
+  const rect = element.getBoundingClientRect();
+  const popupRect = flagInfoPopup.getBoundingClientRect();
+
+  let left = rect.left + window.scrollX;
+  let top = rect.bottom + window.scrollY + 5;
+
+  // Adjust if popup goes off screen
+  if (left + popupRect.width > window.innerWidth) {
+    left = window.innerWidth - popupRect.width - 10;
+  }
+  if (top + popupRect.height > window.innerHeight + window.scrollY) {
+    top = rect.top + window.scrollY - popupRect.height - 5;
+  }
+
+  flagInfoPopup.style.left = `${left}px`;
+  flagInfoPopup.style.top = `${top}px`;
+
+  // Add show class for animation
+  setTimeout(() => {
+    if (flagInfoPopup) {
+      flagInfoPopup.classList.add('misinfo-flag-info-popup-show');
+    }
+  }, 10);
+}
+
+function hideFlagInfoPopup() {
+  if (flagInfoPopup) {
+    flagInfoPopup.remove();
+    flagInfoPopup = null;
+  }
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Load and highlight existing flags for this page
@@ -346,13 +433,13 @@ async function loadAndHighlightFlags() {
         if (flag.selector) {
           const element = document.querySelector(flag.selector);
           if (element) {
-            highlightElement(element, flag.flag_type);
+            highlightElement(element, flag.flag_type, flag);
           }
         }
 
         // For text content, try to find and highlight matching text
         if (flag.content_type === 'text' && flag.content) {
-          highlightTextContent(flag.content, flag.flag_type);
+          highlightTextContent(flag.content, flag.flag_type, flag);
         }
       } catch (error) {
         console.error('Error highlighting flag:', error);
@@ -368,7 +455,7 @@ async function loadAndHighlightFlags() {
 }
 
 // Highlight text content
-function highlightTextContent(text, flagType) {
+function highlightTextContent(text, flagType, flagData = null) {
   // Simple text highlighting - can be improved with better algorithm
   const walker = document.createTreeWalker(
     document.body,
@@ -387,7 +474,7 @@ function highlightTextContent(text, flagType) {
   }
 
   nodesToHighlight.forEach(node => {
-    highlightElement(node, flagType);
+    highlightElement(node, flagType, flagData);
   });
 }
 

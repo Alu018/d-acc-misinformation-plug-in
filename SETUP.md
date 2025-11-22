@@ -24,7 +24,7 @@
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode"
    - Click "Load unpacked"
-   - Select this directory
+   - Select the `extension` directory
 
 ## That's it!
 

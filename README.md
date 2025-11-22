@@ -24,23 +24,31 @@ A Chrome extension that allows users to flag and detect misinformation, harmful 
 
 ```
 d-acc-misinformation-plug-in/
-├── manifest.json              # Chrome extension manifest
-├── content.js                 # Content script for page interaction
-├── content.css                # Styles for highlights and UI
-├── popup.html                 # Extension popup UI
-├── popup.css                  # Popup styles
-├── popup.js                   # Popup logic
-├── config.json                # Database configuration
-├── icons/                     # Extension icons
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
+├── extension/                 # Browser extension
+│   ├── manifest.json          # Chrome extension manifest
+│   ├── content.js             # Content script for page interaction
+│   ├── content.css            # Styles for highlights and UI
+│   ├── popup.html             # Extension popup UI
+│   ├── popup.css              # Popup styles
+│   ├── popup.js               # Popup logic
+│   ├── icons/                 # Extension icons
+│   │   ├── icon16.png
+│   │   ├── icon48.png
+│   │   └── icon128.png
+│   ├── tests/                 # Extension tests
+│   ├── generate-icons.py      # Script to generate placeholder icons
+│   └── package.json           # Extension dependencies
+├── webapp/                    # Web application (future)
+├── api/                       # Backend API server
+│   ├── server.js              # Express API server
+│   └── package.json           # API dependencies
 ├── supabase/                  # Database configuration
 │   ├── migrations/
 │   │   └── 001_create_flagged_content_table.sql
 │   └── kong.yml               # Kong API gateway config
-├── docker-compose.yml         # Local Supabase setup
-├── generate-icons.py          # Script to generate placeholder icons
+├── config.json                # Database configuration
+├── docker-compose.simple.yml  # Local database setup
+├── init.sql                   # Database initialization
 └── README.md                  # This file
 ```
 
@@ -136,7 +144,7 @@ For production, update these values with your actual Supabase project credential
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode" (toggle in top-right corner)
 3. Click "Load unpacked"
-4. Select the `d-acc-misinformation-plug-in` directory
+4. Select the `extension` directory inside the project folder
 5. The extension should now appear in your extensions list
 
 ## Usage

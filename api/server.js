@@ -20,11 +20,15 @@ app.use(express.json());
 // Get flagged content for a page
 app.get('/rest/v1/flagged_content', async (req, res) => {
   try {
-    const { page_url } = req.query;
+    let { page_url } = req.query;
     let query = 'SELECT * FROM flagged_content';
     const params = [];
 
     if (page_url) {
+      // Handle PostgREST filter syntax: eq.VALUE
+      if (page_url.startsWith('eq.')) {
+        page_url = page_url.substring(3);
+      }
       query += ' WHERE page_url = $1';
       params.push(page_url);
     }

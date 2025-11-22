@@ -23,6 +23,17 @@
   box-shadow: 0 0 8px rgba(244, 67, 54, 0.6) !important;
 }
 
+/* Uncertain confidence - orange instead of red */
+.misinfo-highlighted.misinfo-uncertain[data-flag-type="misinformation"] {
+  border-color: #ff9800 !important;
+  background-color: rgba(255, 152, 0, 0.2) !important;
+}
+
+.misinfo-highlighted.misinfo-uncertain[data-flag-type="misinformation"]:hover {
+  background-color: rgba(255, 152, 0, 0.35) !important;
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.6) !important;
+}
+
 .misinfo-highlighted[data-flag-type="scam"] {
   border-color: #ff5722 !important;
   background-color: rgba(255, 87, 34, 0.2) !important;
@@ -87,6 +98,54 @@
 .misinfo-popup-content textarea {
   min-height: 60px;
   resize: vertical;
+}
+
+.misinfo-confidence-group {
+  margin-bottom: 12px;
+}
+
+.misinfo-confidence-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.misinfo-confidence-options {
+  display: flex;
+  gap: 12px;
+}
+
+.misinfo-confidence-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  transition: all 0.2s;
+}
+
+.misinfo-confidence-option:hover {
+  background-color: #f0f0f0;
+  border-color: #bbb;
+}
+
+.misinfo-confidence-option input[type="radio"] {
+  cursor: pointer;
+  margin: 0;
+}
+
+.misinfo-confidence-option input[type="radio"]:checked + span {
+  font-weight: 600;
+}
+
+.misinfo-confidence-option span {
+  font-size: 13px;
+  color: #333;
 }
 
 .misinfo-char-count {
@@ -235,6 +294,11 @@
 .misinfo-flag-badge-other {
   background-color: #9e9e9e;
   color: white;
+}
+
+.misinfo-flag-badge-uncertain {
+  background-color: #ff9800 !important;
+  color: white !important;
 }
 
 .misinfo-flag-info-note {

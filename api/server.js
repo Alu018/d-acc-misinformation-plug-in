@@ -46,14 +46,14 @@ app.get('/rest/v1/flagged_content', async (req, res) => {
 // Create flagged content
 app.post('/rest/v1/flagged_content', async (req, res) => {
   try {
-    const { url, page_url, content, content_type, flag_type, note, selector } = req.body;
+    const { url, page_url, content, content_type, flag_type, confidence, note, selector } = req.body;
 
     const result = await pool.query(
       `INSERT INTO flagged_content
-       (url, page_url, content, content_type, flag_type, note, selector)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (url, page_url, content, content_type, flag_type, confidence, note, selector)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [url, page_url, content, content_type, flag_type, note, selector]
+      [url, page_url, content, content_type, flag_type, confidence || 'certain', note, selector]
     );
 
     res.status(201).json(result.rows[0]);

@@ -140,6 +140,19 @@ function showFlagPopup(x, y) {
         <option value="misinformation">Misinformation</option>
         <option value="other">Other</option>
       </select>
+      <div class="misinfo-confidence-group">
+        <label class="misinfo-confidence-label">Confidence:</label>
+        <div class="misinfo-confidence-options">
+          <label class="misinfo-confidence-option">
+            <input type="radio" name="confidence" value="certain" checked>
+            <span>Certain</span>
+          </label>
+          <label class="misinfo-confidence-option">
+            <input type="radio" name="confidence" value="uncertain">
+            <span>Not quite certain</span>
+          </label>
+        </div>
+      </div>
       <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)" maxlength="${MAX_NOTE_LENGTH}"></textarea>
       <div class="misinfo-char-count">
         <span id="misinfo-note-count">0</span>/${MAX_NOTE_LENGTH} characters
@@ -194,6 +207,7 @@ function closePopup() {
 async function submitFlag() {
   const flagType = document.getElementById('misinfo-flag-type').value;
   const note = document.getElementById('misinfo-flag-note').value;
+  const confidence = document.querySelector('input[name="confidence"]:checked').value;
 
   if (!selectedContent) {
     console.error('No content selected');
@@ -252,6 +266,7 @@ async function submitFlag() {
     content: content,
     content_type: selectedContent.type,
     flag_type: flagType,
+    confidence: confidence,
     note: note,
     selector: selector,
     timestamp: new Date().toISOString()
@@ -260,8 +275,8 @@ async function submitFlag() {
   try {
     await saveFlagToDatabase(flagData);
 
-    // Highlight the flagged content
-    highlightElement(selectedElement, flagType);
+    // Highlight the flagged content with confidence level
+    highlightElement(selectedElement, flagType, { ...flagData, created_at: flagData.timestamp });
 
     // Show success message
     showNotification('Content flagged successfully!');
@@ -321,6 +336,12 @@ function highlightElement(element, flagType, flagData = null) {
   if (flagData) {
     element.setAttribute('data-flag-note', flagData.note || '');
     element.setAttribute('data-flag-date', flagData.created_at || flagData.timestamp || '');
+    element.setAttribute('data-flag-confidence', flagData.confidence || 'certain');
+
+    // Add confidence class for styling
+    if (flagData.confidence === 'uncertain') {
+      element.classList.add('misinfo-uncertain');
+    }
   }
 
   // Add hover listeners to show flag info popup
@@ -358,6 +379,7 @@ function showFlagInfoPopup(element, event) {
   const flagType = element.getAttribute('data-flag-type');
   const note = element.getAttribute('data-flag-note');
   const date = element.getAttribute('data-flag-date');
+  const confidence = element.getAttribute('data-flag-confidence') || 'certain';
 
   // Create popup
   flagInfoPopup = document.createElement('div');
@@ -369,10 +391,12 @@ function showFlagInfoPopup(element, event) {
     dateStr = flagDate.toLocaleDateString() + ' ' + flagDate.toLocaleTimeString();
   }
 
+  const confidenceText = confidence === 'uncertain' ? ' (Uncertain)' : '';
+
   flagInfoPopup.innerHTML = `
     <div class="misinfo-flag-info-content">
       <div class="misinfo-flag-info-header">
-        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}">${flagType}</span>
+        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}${confidence === 'uncertain' ? ' misinfo-flag-badge-uncertain' : ''}">${flagType}${confidenceText}</span>
       </div>
       ${note ? `<div class="misinfo-flag-info-note">${escapeHtml(note)}</div>` : '<div class="misinfo-flag-info-note-empty">No additional notes</div>'}
       ${dateStr ? `<div class="misinfo-flag-info-date">Flagged: ${dateStr}</div>` : ''}

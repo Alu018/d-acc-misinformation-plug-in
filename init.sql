@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS flagged_content (
   content TEXT NOT NULL,
   content_type VARCHAR(50) NOT NULL CHECK (content_type IN ('text', 'image', 'video', 'other')),
   flag_type VARCHAR(50) NOT NULL CHECK (flag_type IN ('scam', 'misinformation', 'other')),
+  confidence VARCHAR(20) DEFAULT 'certain' CHECK (confidence IN ('certain', 'uncertain')),
   note TEXT,
   selector TEXT,
   created_at TIMESTAMP DEFAULT NOW()

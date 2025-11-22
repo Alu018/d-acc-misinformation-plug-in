@@ -2,6 +2,23 @@
 
 let currentConfig = null;
 
+// Helper to build API URL (local PostgREST vs Supabase)
+function buildApiUrl(baseUrl, endpoint) {
+  const isLocal = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+  return isLocal ? `${baseUrl}/${endpoint}` : `${baseUrl}/rest/v1/${endpoint}`;
+}
+
+// Helper to build headers (skip auth for localhost)
+function buildHeaders(baseUrl, apiKey) {
+  const isLocal = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+  const headers = { 'Content-Type': 'application/json' };
+  if (!isLocal) {
+    headers['apikey'] = apiKey;
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+  return headers;
+}
+
 // Initialize popup
 async function init() {
   currentConfig = await loadConfig();
@@ -10,9 +27,12 @@ async function init() {
   await loadFlagCount();
 
   // Set up event listeners
+  document.getElementById('flag-page-btn').addEventListener('click', showFlagPageModal);
   document.getElementById('refresh-btn').addEventListener('click', refreshFlags);
   document.getElementById('settings-btn').addEventListener('click', toggleSettings);
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+  document.getElementById('modal-submit-btn').addEventListener('click', submitPageFlag);
+  document.getElementById('modal-cancel-btn').addEventListener('click', hideFlagPageModal);
   
   const modeRadios = document.querySelectorAll('input[name="server-mode"]');
   modeRadios.forEach(radio => {
@@ -97,12 +117,9 @@ async function getFlagsForPage(pageUrl) {
   const { supabaseUrl, supabaseKey } = currentConfig;
 
   const response = await fetch(
-    `${supabaseUrl}/rest/v1/flagged_content?page_url=eq.${encodeURIComponent(pageUrl)}`,
+    `${buildApiUrl(supabaseUrl, 'flagged_content')}?page_url=eq.${encodeURIComponent(pageUrl)}`,
     {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`
-      }
+      headers: buildHeaders(supabaseUrl, supabaseKey)
     }
   );
 
@@ -191,13 +208,8 @@ async function saveSettings() {
   const updates = { serverMode: mode };
   
   if (mode === 'manual') {
-    const supabaseUrl = document.getElementById('supabase-url').value.trim();
-    const supabaseKey = document.getElementById('supabase-key').value.trim();
-
-    if (!supabaseUrl || !supabaseKey) {
-      alert('Please fill in all fields for Manual Server');
-      return;
-    }
+    const supabaseUrl = document.getElementById('supabase-url').value.trim() || 'http://localhost:3001';
+    const supabaseKey = document.getElementById('supabase-key').value.trim() || 'local';
     
     updates.manualSupabaseUrl = supabaseUrl;
     updates.manualSupabaseKey = supabaseKey;
@@ -241,6 +253,75 @@ async function saveSettings() {
   } catch (error) {
     console.error('Error saving settings:', error);
     alert('Error saving settings');
+  }
+}
+
+// Show flag page modal
+async function showFlagPageModal() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = tab.url;
+
+  document.getElementById('modal-current-url').textContent = url;
+  document.getElementById('flag-page-modal').style.display = 'flex';
+}
+
+// Hide flag page modal
+function hideFlagPageModal() {
+  document.getElementById('flag-page-modal').style.display = 'none';
+  document.getElementById('modal-note').value = '';
+  document.querySelector('input[name="modal-confidence"][value="certain"]').checked = true;
+}
+
+// Submit page flag
+async function submitPageFlag() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = tab.url;
+  const flagType = document.getElementById('modal-flag-type').value;
+  const note = document.getElementById('modal-note').value.trim();
+  const confidence = document.querySelector('input[name="modal-confidence"]:checked').value;
+
+  const flagData = {
+    url: url,
+    flag_type: flagType,
+    confidence: confidence,
+    note: note,
+    flagged_by_url: url,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    await saveLinkFlagToDatabase(flagData);
+
+    const btn = document.getElementById('modal-submit-btn');
+    btn.textContent = 'Flagged!';
+    btn.style.backgroundColor = '#4caf50';
+
+    setTimeout(() => {
+      hideFlagPageModal();
+      btn.textContent = 'Flag Page';
+      btn.style.backgroundColor = '';
+    }, 1000);
+  } catch (error) {
+    console.error('Error flagging page:', error);
+    alert('Error flagging page. Please try again.');
+  }
+}
+
+// Save link flag to database
+async function saveLinkFlagToDatabase(flagData) {
+  const { supabaseUrl, supabaseKey } = currentConfig;
+
+  const response = await fetch(buildApiUrl(supabaseUrl, 'flagged_links'), {
+    method: 'POST',
+    headers: {
+      ...buildHeaders(supabaseUrl, supabaseKey),
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(flagData)
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
 }
 

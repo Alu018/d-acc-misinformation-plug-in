@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:15
+    container_name: misinfo-db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: misinfo
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgrest:
+    image: postgrest/postgrest:latest
+    container_name: misinfo-postgrest
+    ports:
+      - "3001:3000"
+    environment:
+      PGRST_DB_URI: postgres://postgres:postgres@db:5432/misinfo
+      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_OPENAPI_SERVER_PROXY_URI: http://localhost:3001
+    depends_on:
+      db:
+        condition: service_healthy
+
+  studio:
+    image: supabase/studio:latest
+    container_name: misinfo-studio
+    ports:
+      - "3002:3000"
+    environment:
+      STUDIO_PG_META_URL: http://pgmeta:8080
+      SUPABASE_URL: http://postgrest:3000
+      SUPABASE_PUBLIC_URL: http://localhost:3001
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+      POSTGRES_PASSWORD: postgres
+    depends_on:
+      - db
+      - postgrest
+      - pgmeta
+
+  pgmeta:
+    image: supabase/postgres-meta:v0.68.0
+    container_name: misinfo-pgmeta
+    ports:
+      - "8080:8080"
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: misinfo
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

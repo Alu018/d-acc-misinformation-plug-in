@@ -67,6 +67,9 @@ function validateContentType(type) {
 
 // Initialize the extension
 async function init() {
+  // Check if current URL is flagged
+  await checkCurrentUrlFlag();
+
   // Load existing flags for this page
   await loadAndHighlightFlags();
 
@@ -507,12 +510,10 @@ async function saveFlagToDatabase(flagData) {
   const config = await loadConfig();
   const { supabaseUrl, supabaseKey } = config;
 
-  const response = await fetch(`${supabaseUrl}/rest/v1/flagged_content`, {
+  const response = await fetch(buildApiUrl(supabaseUrl, 'flagged_content'), {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
+      ...buildHeaders(supabaseUrl, supabaseKey),
       'Prefer': 'return=minimal'
     },
     body: JSON.stringify(flagData)
@@ -529,12 +530,9 @@ async function getFlagsForPage(pageUrl) {
   const { supabaseUrl, supabaseKey } = config;
 
   const response = await fetch(
-    `${supabaseUrl}/rest/v1/flagged_content?page_url=eq.${encodeURIComponent(pageUrl)}`,
+    `${buildApiUrl(supabaseUrl, 'flagged_content')}?page_url=eq.${encodeURIComponent(pageUrl)}`,
     {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`
-      }
+      headers: buildHeaders(supabaseUrl, supabaseKey)
     }
   );
 
@@ -543,6 +541,37 @@ async function getFlagsForPage(pageUrl) {
   }
 
   return await response.json();
+}
+
+// Helper to build API URL (local PostgREST vs Supabase)
+function buildApiUrl(baseUrl, endpoint) {
+  const isLocal = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+  return isLocal ? `${baseUrl}/${endpoint}` : `${baseUrl}/rest/v1/${endpoint}`;
+}
+
+// Helper to build headers (skip auth for localhost)
+function buildHeaders(baseUrl, apiKey) {
+  const isLocal = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+  const headers = { 'Content-Type': 'application/json' };
+  if (!isLocal) {
+    headers['apikey'] = apiKey;
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+  return headers;
+}
+
+// Normalize URL for matching (strip protocol, www, trailing slash, fragments)
+function normalizeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    let normalized = parsed.hostname.replace(/^www\./, '') + parsed.pathname;
+    normalized = normalized.replace(/\/$/, ''); // Remove trailing slash
+    // Keep query params but remove fragments
+    if (parsed.search) normalized += parsed.search;
+    return normalized.toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
 }
 
 // Load config
@@ -593,6 +622,218 @@ function showNotification(message, type = 'success') {
     notification.classList.remove('misinfo-notification-show');
     setTimeout(() => notification.remove(), 300);
   }, 3000);
+}
+
+// Link flagging functionality
+let linkFlagData = null;
+
+// Listen for messages from background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'flagLink') {
+    showLinkFlagDialog(request.linkUrl, request.flagType);
+  }
+});
+
+// Show flag dialog for links
+function showLinkFlagDialog(linkUrl, initialFlagType) {
+  linkFlagData = { url: linkUrl, flagType: initialFlagType };
+
+  // Remove existing popup if any
+  if (flagPopup) {
+    flagPopup.remove();
+  }
+
+  // Create popup
+  flagPopup = document.createElement('div');
+  flagPopup.className = 'misinfo-flag-popup';
+  flagPopup.innerHTML = `
+    <div class="misinfo-popup-content">
+      <h3>Flag Link</h3>
+      <p class="misinfo-link-preview">${linkUrl}</p>
+      <select id="misinfo-flag-type">
+        <option value="scam" ${initialFlagType === 'scam' ? 'selected' : ''}>Scam</option>
+        <option value="misinformation" ${initialFlagType === 'misinformation' ? 'selected' : ''}>Misinformation</option>
+        <option value="other" ${initialFlagType === 'other' ? 'selected' : ''}>Other</option>
+      </select>
+      <div class="misinfo-confidence-group">
+        <label class="misinfo-confidence-label">Confidence:</label>
+        <div class="misinfo-confidence-options">
+          <label class="misinfo-confidence-option">
+            <input type="radio" name="confidence" value="certain" checked>
+            <span>Certain</span>
+          </label>
+          <label class="misinfo-confidence-option">
+            <input type="radio" name="confidence" value="uncertain">
+            <span>Not quite certain</span>
+          </label>
+        </div>
+      </div>
+      <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)" maxlength="${MAX_NOTE_LENGTH}"></textarea>
+      <div class="misinfo-char-count">
+        <span id="misinfo-note-count">0</span>/${MAX_NOTE_LENGTH} characters
+      </div>
+      <div class="misinfo-popup-buttons">
+        <button id="misinfo-flag-submit">Flag Link</button>
+        <button id="misinfo-flag-cancel">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  // Position popup in the center of the viewport
+  flagPopup.style.position = 'fixed';
+  flagPopup.style.left = '50%';
+  flagPopup.style.top = '50%';
+  flagPopup.style.transform = 'translate(-50%, -50%)';
+
+  document.body.appendChild(flagPopup);
+
+  // Add event listeners
+  document.getElementById('misinfo-flag-submit').addEventListener('click', submitLinkFlag);
+  document.getElementById('misinfo-flag-cancel').addEventListener('click', closePopup);
+
+  // Update character count
+  const noteTextarea = document.getElementById('misinfo-flag-note');
+  const noteCount = document.getElementById('misinfo-note-count');
+  noteTextarea.addEventListener('input', () => {
+    noteCount.textContent = noteTextarea.value.length;
+  });
+
+  // Close popup when clicking outside
+  setTimeout(() => {
+    document.addEventListener('click', handleOutsideClick);
+  }, 100);
+}
+
+// Submit link flag to database
+async function submitLinkFlag() {
+  const flagType = document.getElementById('misinfo-flag-type').value;
+  const note = document.getElementById('misinfo-flag-note').value;
+  const confidence = document.querySelector('input[name="confidence"]:checked').value;
+
+  if (!linkFlagData) {
+    console.error('No link data');
+    closePopup();
+    return;
+  }
+
+  // Validate flag type
+  const flagTypeValidation = validateFlagType(flagType);
+  if (!flagTypeValidation.valid) {
+    showNotification(flagTypeValidation.error, 'error');
+    return;
+  }
+
+  // Validate note
+  const noteValidation = validateNote(note);
+  if (!noteValidation.valid) {
+    showNotification(noteValidation.error, 'error');
+    return;
+  }
+
+  // Validate URL
+  const urlValidation = validateUrl(linkFlagData.url);
+  if (!urlValidation.valid) {
+    showNotification(urlValidation.error, 'error');
+    return;
+  }
+
+  const flagData = {
+    url: linkFlagData.url,
+    flag_type: flagType,
+    confidence: confidence,
+    note: note,
+    flagged_by_url: window.location.href,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    await saveLinkFlagToDatabase(flagData);
+    showNotification('Link flagged successfully!');
+    closePopup();
+    linkFlagData = null;
+  } catch (error) {
+    console.error('Error saving link flag:', error);
+    showNotification('Error flagging link. Please try again.', 'error');
+  }
+}
+
+// Save link flag to database
+async function saveLinkFlagToDatabase(flagData) {
+  const config = await loadConfig();
+  const { supabaseUrl, supabaseKey } = config;
+
+  const response = await fetch(buildApiUrl(supabaseUrl, 'flagged_links'), {
+    method: 'POST',
+    headers: {
+      ...buildHeaders(supabaseUrl, supabaseKey),
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(flagData)
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}
+
+// Check if current URL is flagged
+async function checkCurrentUrlFlag() {
+  const currentUrl = window.location.href;
+  const normalizedCurrent = normalizeUrl(currentUrl);
+  const config = await loadConfig();
+  const { supabaseUrl, supabaseKey } = config;
+
+  try {
+    // Get all flagged links and check normalized URLs
+    const response = await fetch(
+      buildApiUrl(supabaseUrl, 'flagged_links'),
+      {
+        headers: buildHeaders(supabaseUrl, supabaseKey)
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const allFlags = await response.json();
+
+    // Find matches by normalizing each flagged URL
+    const matchingFlags = allFlags.filter(flag =>
+      normalizeUrl(flag.url) === normalizedCurrent
+    );
+
+    if (matchingFlags && matchingFlags.length > 0) {
+      // Show warning banner for the first (most recent) flag
+      showUrlWarningBanner(matchingFlags[0]);
+    }
+  } catch (error) {
+    console.error('Error checking URL flags:', error);
+  }
+}
+
+// Show warning banner for flagged URL
+function showUrlWarningBanner(flagData) {
+  const banner = document.createElement('div');
+  banner.className = 'misinfo-url-warning-banner';
+  banner.innerHTML = `
+    <div class="misinfo-banner-content">
+      <div class="misinfo-banner-icon">⚠️</div>
+      <div class="misinfo-banner-text">
+        <strong>Warning:</strong> This page has been flagged as <span class="misinfo-flag-badge">${flagData.flag_type}</span>
+        ${flagData.note ? `<br><em>${flagData.note}</em>` : ''}
+      </div>
+      <button class="misinfo-banner-close">×</button>
+    </div>
+  `;
+
+  // Add banner to top of page
+  document.body.insertBefore(banner, document.body.firstChild);
+
+  // Close button functionality
+  banner.querySelector('.misinfo-banner-close').addEventListener('click', () => {
+    banner.remove();
+  });
 }
 
 // Initialize when DOM is ready

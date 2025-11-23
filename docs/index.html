@@ -364,12 +364,19 @@
 
       try {
         console.log('Deleting link with ID:', id);
-        const { error } = await _supabase
+        const { data, error, count } = await _supabase
           .from('flagged_links')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .select();
+
+        console.log('Delete response:', { data, error, count });
 
         if (error) throw error;
+
+        if (!data || data.length === 0) {
+          throw new Error('Delete operation succeeded but no rows were affected. This may be due to database permissions (RLS policies).');
+        }
 
         console.log('Delete successful, reloading data...');
         // Reload data after successful delete
@@ -377,7 +384,7 @@
         console.log('Data reloaded');
       } catch (error) {
         console.error('Error deleting link:', error);
-        alert('Failed to delete link. Please try again.');
+        alert('Failed to delete link: ' + (error.message || error));
       }
     }
 
@@ -387,18 +394,28 @@
       }
 
       try {
-        const { error } = await _supabase
+        console.log('Deleting content with ID:', id);
+        const { data, error, count } = await _supabase
           .from('flagged_content')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .select();
+
+        console.log('Delete response:', { data, error, count });
 
         if (error) throw error;
 
+        if (!data || data.length === 0) {
+          throw new Error('Delete operation succeeded but no rows were affected. This may be due to database permissions (RLS policies).');
+        }
+
+        console.log('Delete successful, reloading data...');
         // Reload data after successful delete
         await loadData();
+        console.log('Data reloaded');
       } catch (error) {
         console.error('Error deleting content:', error);
-        alert('Failed to delete content. Please try again.');
+        alert('Failed to delete content: ' + (error.message || error));
       }
     }
 

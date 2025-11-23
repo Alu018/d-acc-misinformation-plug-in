@@ -355,7 +355,7 @@
         allFlags.filter(f => f.flag_type === 'misinformation').length;
     }
 
-    async function deleteLink(id) {
+    window.deleteLink = async function(id) {
       if (!confirm('Are you sure you want to delete this flagged link?')) {
         return;
       }
@@ -376,7 +376,7 @@
       }
     }
 
-    async function deleteContent(id) {
+    window.deleteContent = async function(id) {
       if (!confirm('Are you sure you want to delete this flagged content?')) {
         return;
       }

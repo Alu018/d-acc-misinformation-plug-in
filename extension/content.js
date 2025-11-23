@@ -343,6 +343,17 @@ function highlightElement(element, flagType, flagData = null) {
     element = element.parentElement;
   }
 
+  // If content type is text, only highlight the matching text
+  if (flagData.content_type == 'text') {
+      const content = flagData.content;
+      console.log("flag data content: ", content)
+      const originalText = element.innerHTML;
+      const regex = new RegExp(content, 'g'); // Create a global regex for all occurrences
+      const newText = originalText.replace(regex, `<strong>${content}</strong>`);
+      element.innerHTML = newText;
+      element = element.querySelector('strong');
+  }
+
   element.classList.add('misinfo-highlighted');
   element.setAttribute('data-flag-type', flagType);
 
@@ -593,9 +604,9 @@ async function loadConfig() {
 
     // Check storage for mode and manual settings
     const storage = await chrome.storage.local.get(['serverMode', 'manualSupabaseUrl', 'manualSupabaseKey', 'supabaseUrl', 'supabaseKey']);
-    
+
     const serverMode = storage.serverMode || 'global';
-    
+
     if (serverMode === 'manual') {
       // Use manual settings if available
       if (storage.manualSupabaseUrl || storage.supabaseUrl) {

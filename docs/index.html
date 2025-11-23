@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Community-Powered AI Threat Detector Dashboard</title>
+  <title>Community-Powered AI Threat Detector</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -17,9 +17,43 @@
     }
     h1 {
       color: #333;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       font-size: 32px;
     }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #666;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: -2px;
+    }
+    .tab-btn:hover {
+      color: #667eea;
+    }
+    .tab-btn.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Dashboard Styles */
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -83,11 +117,9 @@
     }
     .badge-scam { background: #ff5722; color: white; }
     .badge-misinformation { background: #f44336; color: white; }
-    .badge-fake_profile { background: #9c27b0; color: white; }
     .badge-other { background: #9e9e9e; color: white; }
-    .badge-high { background: #4caf50; color: white; }
-    .badge-medium { background: #ff9800; color: white; }
-    .badge-low { background: #f44336; color: white; }
+    .badge-certain { background: #4caf50; color: white; }
+    .badge-uncertain { background: #ff9800; color: white; }
     .url-cell {
       max-width: 300px;
       overflow: hidden;
@@ -127,81 +159,158 @@
     .refresh-btn:hover {
       background: #5568d3;
     }
-    .delete-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      padding: 4px 8px;
-      transition: transform 0.2s;
+
+    /* Docs Styles */
+    .docs-content {
+      line-height: 1.6;
+      color: #333;
     }
-    .delete-btn:hover {
-      transform: scale(1.2);
+    .docs-content h3 {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      color: #444;
     }
-    .delete-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    .docs-content p {
+      margin-bottom: 15px;
     }
-    .actions-cell {
-      text-align: center;
-      width: 60px;
+    .docs-content code {
+      background: #f0f0f0;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🛡️ Misinformation Detector Dashboard</h1>
+    <h1>🛡️ AI Threat Detector</h1>
 
-    <div class="stats" id="stats">
-      <div class="stat-card">
-        <div class="stat-number" id="total-content">-</div>
-        <div class="stat-label">Flagged Content</div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('docs')">Documentation</button>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="tab-content active">
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <div class="stat-number" id="total-content">-</div>
+          <div class="stat-label">Flagged Content</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="total-links">-</div>
+          <div class="stat-label">Flagged Links</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="total-scam">-</div>
+          <div class="stat-label">Scams</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="total-misinfo">-</div>
+          <div class="stat-label">Misinformation</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number" id="total-links">-</div>
-        <div class="stat-label">Flagged Links</div>
+
+      <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+
+      <div class="section">
+        <h2>Flagged Links</h2>
+        <div id="links-content">
+          <div class="loading">Loading...</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number" id="total-scam">-</div>
-        <div class="stat-label">Scams</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="total-misinfo">-</div>
-        <div class="stat-label">Misinformation</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number" id="total-fake">-</div>
-        <div class="stat-label">Fake Profiles</div>
+
+      <div class="section">
+        <h2>Flagged Content</h2>
+        <div id="content-content">
+          <div class="loading">Loading...</div>
+        </div>
       </div>
     </div>
 
-    <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
+    <!-- Documentation View -->
+    <div id="docs-view" class="tab-content">
+      <div class="section docs-content">
+        <h2>Documentation</h2>
+        <p>Welcome to the Community-Powered AI Threat Detector documentation.</p>
 
-    <div class="section">
-      <h2>Flagged Links</h2>
-      <div id="links-content">
-        <div class="loading">Loading...</div>
-      </div>
-    </div>
+        <h3>Overview</h3>
+        <p>The AI threat Detector is a tool designed to help users identify and flag potentially misleading or harmful content on the web. It consists of a browser extension and a web dashboard.</p>
 
-    <div class="section">
-      <h2>Flagged Content</h2>
-      <div id="content-content">
-        <div class="loading">Loading...</div>
+        <h3>How it Works</h3>
+        <p>Users can install the browser extension to:</p>
+        <ul>
+          <li>View flags on visited pages.</li>
+          <li>Submit new flags for suspicious content.</li>
+        </ul>
+        <p>The dashboard you are currently viewing aggregates all flagged content for analysis.</p>
+
+        <h3>Data Sources</h3>
+        <p>This dashboard pulls data directly from our Supabase database. It displays:</p>
+        <ul>
+          <li><strong>Flagged Links:</strong> URLs that have been reported as suspicious.</li>
+          <li><strong>Flagged Content:</strong> Specific text or media elements within a page that have been flagged.</li>
+        </ul>
       </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Use the PostgREST API URL
-    const API_URL = 'http://localhost:3001';
+    let _supabase;
+
+    function switchTab(tabName) {
+      // Update buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Update content
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.getElementById(`${tabName}-view`).classList.add('active');
+    }
+
+    async function init() {
+      try {
+        const config = await fetch('config.json').then(r => r.json());
+
+        if (!config.supabaseUrl || !config.supabaseKey) {
+          throw new Error('Missing Supabase configuration in config.json');
+        }
+
+        const { createClient } = supabase;
+        _supabase = createClient(config.supabaseUrl, config.supabaseKey);
+
+        loadData();
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+
+      } catch (error) {
+        console.error('Initialization error:', error);
+        document.getElementById('links-content').innerHTML =
+          `<div class="error">Error initializing: ${error.message}. Please ensure config.json exists and contains valid credentials.</div>`;
+      }
+    }
 
     async function loadData() {
+      if (!_supabase) return;
+
       try {
-        const [links, content] = await Promise.all([
-          fetch(`${API_URL}/flagged_links`).then(r => r.json()),
-          fetch(`${API_URL}/flagged_content`).then(r => r.json())
+        const [linksResponse, contentResponse] = await Promise.all([
+          _supabase
+            .from('flagged_links')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          _supabase
+            .from('flagged_content')
+            .select('*')
+            .order('created_at', { ascending: false })
         ]);
+
+        if (linksResponse.error) throw linksResponse.error;
+        if (contentResponse.error) throw contentResponse.error;
+
+        const links = linksResponse.data;
+        const content = contentResponse.data;
 
         updateStats(links, content);
         displayLinks(links);
@@ -221,58 +330,6 @@
         allFlags.filter(f => f.flag_type === 'scam').length;
       document.getElementById('total-misinfo').textContent =
         allFlags.filter(f => f.flag_type === 'misinformation').length;
-      document.getElementById('total-fake').textContent =
-        allFlags.filter(f => f.flag_type === 'fake_profile').length;
-    }
-
-    async function deleteLink(id) {
-      if (!confirm('Are you sure you want to delete this flagged link?')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}/flagged_links?id=eq.${id}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Reload data after successful delete
-        await loadData();
-      } catch (error) {
-        console.error('Error deleting link:', error);
-        alert('Failed to delete link. Please try again.');
-      }
-    }
-
-    async function deleteContent(id) {
-      if (!confirm('Are you sure you want to delete this flagged content?')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}/flagged_content?id=eq.${id}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Reload data after successful delete
-        await loadData();
-      } catch (error) {
-        console.error('Error deleting content:', error);
-        alert('Failed to delete content. Please try again.');
-      }
-    }
-
-    function getConfidenceBadge(confidence) {
-      if (confidence >= 67) return 'high';
-      if (confidence >= 34) return 'medium';
-      return 'low';
     }
 
     function displayLinks(links) {
@@ -296,7 +353,6 @@
               <th>Note</th>
               <th>Flagged From</th>
               <th>Date</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -308,13 +364,10 @@
                   </a>
                 </td>
                 <td><span class="badge badge-${link.flag_type}">${link.flag_type}</span></td>
-                <td><span class="badge badge-${getConfidenceBadge(link.confidence)}">${link.confidence}%</span></td>
+                <td><span class="badge badge-${link.confidence || 'certain'}">${link.confidence || 'certain'}</span></td>
                 <td>${escapeHtml(link.note || '-')}</td>
                 <td class="url-cell">${link.flagged_by_url ? `<a href="${escapeHtml(link.flagged_by_url)}" target="_blank" class="url-link">${escapeHtml(link.flagged_by_url)}</a>` : '-'}</td>
                 <td>${new Date(link.created_at).toLocaleString()}</td>
-                <td class="actions-cell">
-                  <button class="delete-btn" onclick="deleteLink(${link.id})" title="Delete">🗑️</button>
-                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -344,7 +397,6 @@
               <th>Confidence</th>
               <th>Page URL</th>
               <th>Date</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -353,16 +405,13 @@
                 <td>${escapeHtml(item.content.substring(0, 100))}${item.content.length > 100 ? '...' : ''}</td>
                 <td>${item.content_type}</td>
                 <td><span class="badge badge-${item.flag_type}">${item.flag_type}</span></td>
-                <td><span class="badge badge-${getConfidenceBadge(item.confidence)}">${item.confidence}%</span></td>
+                <td><span class="badge badge-${item.confidence || 'certain'}">${item.confidence || 'certain'}</span></td>
                 <td class="url-cell">
                   <a href="${escapeHtml(item.page_url)}" target="_blank" class="url-link">
                     ${escapeHtml(item.page_url)}
                   </a>
                 </td>
                 <td>${new Date(item.created_at || item.timestamp).toLocaleString()}</td>
-                <td class="actions-cell">
-                  <button class="delete-btn" onclick="deleteContent(${item.id})" title="Delete">🗑️</button>
-                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -377,11 +426,8 @@
       return div.innerHTML;
     }
 
-    // Load data on page load
-    loadData();
-
-    // Auto-refresh every 30 seconds
-    setInterval(loadData, 30000);
+    // Start initialization
+    init();
   </script>
 </body>
 </html>

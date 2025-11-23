@@ -441,7 +441,7 @@
                 <td class="url-cell">${link.flagged_by_url ? `<a href="${escapeHtml(link.flagged_by_url)}" target="_blank" class="url-link">${escapeHtml(link.flagged_by_url)}</a>` : '-'}</td>
                 <td>${new Date(link.created_at).toLocaleString()}</td>
                 <td class="actions-cell">
-                  <button class="delete-btn" onclick="deleteLink(${link.id})" title="Delete">🗑️</button>
+                  <button class="delete-btn" data-id="${link.id}" data-type="link" title="Delete">🗑️</button>
                 </td>
               </tr>
             `).join('')}
@@ -489,7 +489,7 @@
                 </td>
                 <td>${new Date(item.created_at || item.timestamp).toLocaleString()}</td>
                 <td class="actions-cell">
-                  <button class="delete-btn" onclick="deleteContent(${item.id})" title="Delete">🗑️</button>
+                  <button class="delete-btn" data-id="${item.id}" data-type="content" title="Delete">🗑️</button>
                 </td>
               </tr>
             `).join('')}
@@ -504,6 +504,20 @@
       div.textContent = text;
       return div.innerHTML;
     }
+
+    // Event delegation for delete buttons
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        const id = parseInt(e.target.getAttribute('data-id'));
+        const type = e.target.getAttribute('data-type');
+
+        if (type === 'link') {
+          window.deleteLink(id);
+        } else if (type === 'content') {
+          window.deleteContent(id);
+        }
+      }
+    });
 
     // Start initialization
     init();

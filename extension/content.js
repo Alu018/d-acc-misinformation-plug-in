@@ -418,10 +418,6 @@ async function submitFlag() {
         }
 
         // Store verification result in flag data
-        flagData.llm_verified = true;
-        flagData.llm_agrees = verificationResult.agrees_with_flag;
-        flagData.llm_reasoning = verificationResult.reasoning;
-        flagData.llm_sources = JSON.stringify(verificationResult.sources);
         flagData.ai_verification_status = verificationResult.agrees_with_flag ? 'ai_agreed' : 'ai_disagreed';
 
         if (!verificationResult.agrees_with_flag) {
@@ -432,8 +428,6 @@ async function submitFlag() {
             closePopup();
             return;
           }
-          // User confirmed despite LLM disagreement
-          flagData.user_confirmed_despite_llm = true;
         }
       } catch (verificationError) {
         console.error('LLM verification failed:', verificationError);
@@ -444,8 +438,6 @@ async function submitFlag() {
         }
 
         showNotification('AI verification failed, proceeding without verification', 'warning');
-        flagData.llm_verified = false;
-        flagData.llm_error = verificationError.message;
         flagData.ai_verification_status = 'verification_disabled';
       }
     } else {
@@ -730,6 +722,8 @@ async function saveFlagToDatabase(flagData) {
   const config = await loadConfig();
   const { supabaseUrl, supabaseKey } = config;
 
+  console.log('Sending flag data:', JSON.stringify(flagData, null, 2));
+
   const response = await fetch(buildApiUrl(supabaseUrl, 'flagged_content'), {
     method: 'POST',
     headers: {
@@ -740,7 +734,9 @@ async function saveFlagToDatabase(flagData) {
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const errorText = await response.text();
+    console.error('Supabase error:', errorText);
+    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
   }
 
   // Return the created record (includes the ID)

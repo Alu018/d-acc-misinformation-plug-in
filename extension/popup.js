@@ -47,12 +47,46 @@ async function init() {
   // Load settings into form (manual settings)
   document.getElementById('supabase-url').value = currentConfig.manualSupabaseUrl || '';
   document.getElementById('supabase-key').value = currentConfig.manualSupabaseKey || '';
+  document.getElementById('openai-api-key').value = currentConfig.openaiApiKey || '';
+
+  // Load LLM verification toggle (default to true if not set)
+  const llmEnabled = currentConfig.llmVerificationEnabled !== undefined ? currentConfig.llmVerificationEnabled : true;
+  document.getElementById('enable-llm-verification').checked = llmEnabled;
+
+  // Update verification status
+  updateVerificationStatus();
+
+  // Update status when API key changes
+  document.getElementById('openai-api-key').addEventListener('input', updateVerificationStatus);
+
+  // Update status when toggle changes
+  document.getElementById('enable-llm-verification').addEventListener('change', updateVerificationStatus);
 }
 
 function updateManualSettingsVisibility() {
   const mode = document.querySelector('input[name="server-mode"]:checked').value;
   const manualSettings = document.getElementById('manual-settings');
   manualSettings.style.display = mode === 'manual' ? 'block' : 'none';
+}
+
+function updateVerificationStatus() {
+  const apiKeyInput = document.getElementById('openai-api-key');
+  const toggleCheckbox = document.getElementById('enable-llm-verification');
+  const statusSpan = document.getElementById('verification-status');
+
+  const hasApiKey = apiKeyInput.value.trim().length > 0;
+  const isToggleEnabled = toggleCheckbox.checked;
+
+  if (hasApiKey && isToggleEnabled) {
+    statusSpan.textContent = '✓ Enabled';
+    statusSpan.className = 'verification-status verification-enabled';
+  } else if (hasApiKey && !isToggleEnabled) {
+    statusSpan.textContent = '○ Off';
+    statusSpan.className = 'verification-status verification-off';
+  } else {
+    statusSpan.textContent = '✗ No API Key';
+    statusSpan.className = 'verification-status verification-disabled';
+  }
 }
 
 // Load config
@@ -62,14 +96,16 @@ async function loadConfig() {
     const config = await response.json();
 
     // Check storage for mode and manual settings
-    const storage = await chrome.storage.local.get(['serverMode', 'manualSupabaseUrl', 'manualSupabaseKey', 'supabaseUrl', 'supabaseKey']);
-    
+    const storage = await chrome.storage.local.get(['serverMode', 'manualSupabaseUrl', 'manualSupabaseKey', 'supabaseUrl', 'supabaseKey', 'openaiApiKey', 'llmVerificationEnabled']);
+
     const serverMode = storage.serverMode || 'global';
     config.serverMode = serverMode;
-    
+
     // Store manual values for UI
     config.manualSupabaseUrl = storage.manualSupabaseUrl || storage.supabaseUrl || '';
     config.manualSupabaseKey = storage.manualSupabaseKey || storage.supabaseKey || '';
+    config.openaiApiKey = storage.openaiApiKey || '';
+    config.llmVerificationEnabled = storage.llmVerificationEnabled !== undefined ? storage.llmVerificationEnabled : true;
 
     // Override with manual settings if in manual mode
     if (serverMode === 'manual') {
@@ -205,12 +241,19 @@ function toggleSettings() {
 // Save settings
 async function saveSettings() {
   const mode = document.querySelector('input[name="server-mode"]:checked').value;
-  const updates = { serverMode: mode };
-  
+  const openaiApiKey = document.getElementById('openai-api-key').value.trim();
+  const llmVerificationEnabled = document.getElementById('enable-llm-verification').checked;
+
+  const updates = {
+    serverMode: mode,
+    openaiApiKey: openaiApiKey,
+    llmVerificationEnabled: llmVerificationEnabled
+  };
+
   if (mode === 'manual') {
     const supabaseUrl = document.getElementById('supabase-url').value.trim() || 'http://localhost:3001';
     const supabaseKey = document.getElementById('supabase-key').value.trim() || 'local';
-    
+
     updates.manualSupabaseUrl = supabaseUrl;
     updates.manualSupabaseKey = supabaseKey;
     

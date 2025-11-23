@@ -7,11 +7,13 @@ A Chrome extension that allows users to flag and detect misinformation, harmful 
 ### Flagging Feature
 - **Highlight & Flag Content**: Select text, images, or videos on any webpage
 - **Categorization**: Flag content as:
-  - AI Misinformation
-  - Harmful Information
-  - Misleading Content
+  - Scam
+  - Misinformation
+  - Fake Profile
   - Other
+- **AI-Powered Verification** (Optional): Use your own OpenAI API key to verify misinformation flags with web search
 - **Add Notes**: Include optional notes with your flags
+- **Confidence Levels**: Indicate how confident you are in your flag (0-100%)
 - **Persistent Storage**: All flags are stored in a Supabase database
 
 ### Viewer Feature
@@ -31,6 +33,10 @@ d-acc-misinformation-plug-in/
 │   ├── popup.html             # Extension popup UI
 │   ├── popup.css              # Popup styles
 │   ├── popup.js               # Popup logic
+│   ├── llm-verify/            # LLM verification module (isolated)
+│   │   ├── verifier.js        # Main LLM verification logic
+│   │   ├── prompt-template.js # Prompt template for verification
+│   │   └── README.md          # LLM module documentation
 │   ├── icons/                 # Extension icons
 │   │   ├── icon16.png
 │   │   ├── icon48.png
@@ -58,94 +64,25 @@ d-acc-misinformation-plug-in/
 - Docker and Docker Compose (for local development)
 - Python 3 with Pillow (optional, for generating icons)
 
-## Setup Instructions
+## Quick Setup
 
-### 1. Clone the Repository
-
-```bash
-cd d-acc-misinformation-plug-in
-```
-
-### 2. Generate Extension Icons
-
-You need to create icons for the extension. You can either:
-
-**Option A: Generate placeholder icons with Python**
-```bash
-pip install Pillow
-python3 generate-icons.py
-```
-
-**Option B: Create custom icons manually**
-- Create three PNG files in the `icons/` directory:
-  - `icon16.png` (16x16 pixels)
-  - `icon48.png` (48x48 pixels)
-  - `icon128.png` (128x128 pixels)
-
-### 3. Set Up Local Supabase Database
-
-#### Start the Database
+### 1. Start the local database
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-This will start:
-- PostgreSQL database (port 54322)
-- Supabase API Gateway (port 54321)
-- Supabase Studio (port 54323)
+This starts PostgreSQL + PostgREST on port 3001.
 
-#### Verify the Database is Running
+### 2. Load the extension in Chrome
 
-```bash
-docker-compose ps
-```
-
-All services should show as "Up".
-
-#### Access Supabase Studio (Optional)
-
-Open http://localhost:54323 in your browser to view the database through Supabase Studio.
-
-#### Run Migrations
-
-The database migrations will run automatically when the database starts for the first time. The migration creates the `flagged_content` table with the following schema:
-
-```sql
-CREATE TABLE flagged_content (
-  id UUID PRIMARY KEY,
-  url TEXT NOT NULL,              -- Full URL where content was flagged
-  page_url TEXT NOT NULL,         -- Page URL (without query params)
-  content TEXT NOT NULL,          -- The flagged content
-  content_type VARCHAR(50),       -- 'text', 'image', 'video', 'other'
-  flag_type VARCHAR(50),          -- 'misinformation', 'harmful', 'misleading', 'other'
-  note TEXT,                      -- Optional user note
-  selector TEXT,                  -- CSS selector for precise location
-  timestamp TIMESTAMPTZ,          -- When content was flagged
-  created_at TIMESTAMPTZ          -- Record creation time
-);
-```
-
-### 4. Configure the Extension
-
-The extension uses the `config.json` file for database connection. The default configuration points to the local Docker Compose setup:
-
-```json
-{
-  "supabaseUrl": "http://localhost:54321",
-  "supabaseKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-For production, update these values with your actual Supabase project credentials.
-
-### 5. Load the Extension in Chrome
-
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top-right corner)
+1. Open `chrome://extensions/`
+2. Enable "Developer mode"
 3. Click "Load unpacked"
-4. Select the `extension` directory inside the project folder
-5. The extension should now appear in your extensions list
+4. Select the `extension/` directory
+5. In the extension popup settings, choose "Local" mode
+
+Done! The extension will use `http://localhost:3001` automatically.
 
 ## Usage
 
@@ -175,9 +112,23 @@ For production, update these values with your actual Supabase project credential
 ### Managing Settings
 
 1. Click the extension icon to open the popup
-2. Click "Settings" to configure database connection
-3. Enter your Supabase URL and API key
-4. Click "Save Settings"
+2. Click "Settings" to configure:
+   - **Database Connection**: Choose between Global or Manual server
+   - **OpenAI API Key** (Optional): Enable AI-powered verification of flags
+3. Click "Save Settings"
+
+### AI Verification (Optional)
+
+To enable AI-powered fact-checking:
+
+1. Get an OpenAI API key from [platform.openai.com](https://platform.openai.com)
+2. Open extension settings and paste your key in the "OpenAI API Key" field
+3. When flagging content as "misinformation" or "scam":
+   - The AI will verify your claim using web search
+   - If it disagrees, you'll see reasoning and sources
+   - You can still flag the content if you choose to
+
+**Note**: Your API key is stored locally in your browser and only sent to OpenAI's servers.
 
 ## Development
 

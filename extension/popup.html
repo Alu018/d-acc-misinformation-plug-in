@@ -59,6 +59,23 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label for="openai-api-key">
+            OpenAI API Key (optional):
+            <span id="verification-status" class="verification-status"></span>
+          </label>
+          <input type="password" id="openai-api-key" placeholder="sk-...">
+          <small class="help-text">API key for AI-powered verification</small>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="enable-llm-verification" checked>
+            <span>Enable AI Verification</span>
+          </label>
+          <small class="help-text">Toggle AI fact-checking when flagging misinformation</small>
+        </div>
+
         <button id="save-settings-btn" class="btn btn-primary">Save Settings</button>
       </section>
 

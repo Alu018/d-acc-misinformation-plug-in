@@ -48,3 +48,6 @@ logs/
 # Supabase CLI
 .branches/
 .temp/
+
+# API Keys and secrets (stored in Chrome extension storage, not in files)
+# Note: OpenAI API keys are stored in chrome.storage.local, not committed to git

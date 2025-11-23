@@ -213,6 +213,116 @@ function closePopup() {
   document.removeEventListener('click', handleOutsideClick);
 }
 
+// Show loading dialog during LLM verification
+function showLoadingDialog() {
+  // Remove existing popup
+  if (flagPopup) {
+    flagPopup.remove();
+  }
+
+  // Create loading dialog
+  const loading = document.createElement('div');
+  loading.className = 'misinfo-flag-popup misinfo-loading-dialog';
+
+  loading.innerHTML = `
+    <div class="misinfo-popup-content misinfo-loading-content">
+      <div class="misinfo-loading-spinner"></div>
+      <h3>Verifying...</h3>
+      <p class="misinfo-loading-text">AI is checking the content with web search</p>
+    </div>
+  `;
+
+  document.body.appendChild(loading);
+
+  // Position in center
+  loading.style.position = 'fixed';
+  loading.style.left = '50%';
+  loading.style.top = '50%';
+  loading.style.transform = 'translate(-50%, -50%)';
+  loading.style.zIndex = '1000001';
+
+  flagPopup = loading;
+
+  return loading;
+}
+
+// Show confirmation dialog when LLM disagrees with flag
+function showConfirmationDialog(verificationResult) {
+  return new Promise((resolve) => {
+    // Remove existing popup
+    if (flagPopup) {
+      flagPopup.remove();
+    }
+
+    // Create confirmation dialog
+    const dialog = document.createElement('div');
+    dialog.className = 'misinfo-flag-popup misinfo-confirmation-dialog';
+
+    const sourcesHtml = verificationResult.sources
+      .map(source => `
+        <div class="misinfo-source-item">
+          <a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">
+            ${escapeHtml(source.title)}
+          </a>
+          <p class="misinfo-source-relevance">${escapeHtml(source.relevance)}</p>
+        </div>
+      `)
+      .join('');
+
+    dialog.innerHTML = `
+      <div class="misinfo-popup-content misinfo-confirmation-content">
+        <h3>⚠️ AI Verification Result</h3>
+        <div class="misinfo-verification-result">
+          <p class="misinfo-disagreement-notice">
+            Our AI assistant reviewed the content and <strong>believes this was flagged in error</strong>.
+          </p>
+          <div class="misinfo-reasoning">
+            <h4>Reasoning:</h4>
+            <p>${escapeHtml(verificationResult.reasoning)}</p>
+          </div>
+          <div class="misinfo-sources">
+            <h4>Sources:</h4>
+            ${sourcesHtml}
+          </div>
+        </div>
+        <p class="misinfo-confirmation-question">
+          Do you still want to flag this content?
+        </p>
+        <div class="misinfo-popup-buttons">
+          <button id="misinfo-confirm-yes" class="misinfo-btn-confirm">Yes, Flag Anyway</button>
+          <button id="misinfo-confirm-no" class="misinfo-btn-cancel">No, Cancel</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    // Position in center
+    dialog.style.position = 'fixed';
+    dialog.style.left = '50%';
+    dialog.style.top = '50%';
+    dialog.style.transform = 'translate(-50%, -50%)';
+    dialog.style.maxWidth = '600px';
+    dialog.style.maxHeight = '80vh';
+    dialog.style.overflowY = 'auto';
+
+    flagPopup = dialog;
+
+    // Add event listeners
+    document.getElementById('misinfo-confirm-yes').addEventListener('click', () => {
+      dialog.remove();
+      flagPopup = null;
+      resolve(true);
+    });
+
+    document.getElementById('misinfo-confirm-no').addEventListener('click', () => {
+      dialog.remove();
+      flagPopup = null;
+      resolve(false);
+    });
+  });
+}
+
 // Submit flag to database
 async function submitFlag() {
   const flagType = document.getElementById('misinfo-flag-type').value;
@@ -286,6 +396,58 @@ async function submitFlag() {
   };
 
   try {
+    // Check if LLM verification is enabled
+    const verificationEnabled = window.LLMVerifier ? await window.LLMVerifier.isVerificationEnabled() : false;
+
+    if (verificationEnabled && (flagType === 'misinformation' || flagType === 'scam')) {
+      // Show loading indicator
+      const loadingDialog = showLoadingDialog();
+
+      try {
+        const apiKey = await window.LLMVerifier.getApiKey();
+        const verificationResult = await window.LLMVerifier.verifyFlag({
+          apiKey,
+          flagType,
+          selectedText: content,
+          pageUrl: window.location.href
+        });
+
+        // Remove loading dialog
+        if (loadingDialog) {
+          loadingDialog.remove();
+        }
+
+        // Store verification result in flag data
+        flagData.llm_verified = true;
+        flagData.llm_agrees = verificationResult.agrees_with_flag;
+        flagData.llm_reasoning = verificationResult.reasoning;
+        flagData.llm_sources = JSON.stringify(verificationResult.sources);
+
+        if (!verificationResult.agrees_with_flag) {
+          // LLM disagrees with the flag - ask user for confirmation
+          const userConfirmed = await showConfirmationDialog(verificationResult);
+
+          if (!userConfirmed) {
+            closePopup();
+            return;
+          }
+          // User confirmed despite LLM disagreement
+          flagData.user_confirmed_despite_llm = true;
+        }
+      } catch (verificationError) {
+        console.error('LLM verification failed:', verificationError);
+
+        // Remove loading dialog
+        if (loadingDialog) {
+          loadingDialog.remove();
+        }
+
+        showNotification('AI verification failed, proceeding without verification', 'warning');
+        flagData.llm_verified = false;
+        flagData.llm_error = verificationError.message;
+      }
+    }
+
     await saveFlagToDatabase(flagData);
 
     // Highlight the flagged content with confidence level
@@ -343,15 +505,22 @@ function highlightElement(element, flagType, flagData = null) {
   }
 
   // If content type is text, only highlight the matching text
-  if (flagData.content_type == 'text') {
+  if (flagData && flagData.content_type == 'text') {
       const content = flagData.content;
       console.log("flag data content: ", content)
       const originalText = element.innerHTML;
       const regex = new RegExp(content, 'g'); // Create a global regex for all occurrences
       const newText = originalText.replace(regex, `<strong>${content}</strong>`);
       element.innerHTML = newText;
-      element = element.querySelector('strong');
+      const strongElement = element.querySelector('strong');
+      // Only reassign if we found the strong element
+      if (strongElement) {
+        element = strongElement;
+      }
   }
+
+  // Final check - element might still be null
+  if (!element) return;
 
   element.classList.add('misinfo-highlighted');
   element.setAttribute('data-flag-type', flagType);

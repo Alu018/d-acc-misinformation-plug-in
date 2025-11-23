@@ -5,10 +5,16 @@
   "scripts": {
     "seed-db": "node scripts/seed-database.js"
   },
-  "keywords": ["misinformation", "detector", "browser-extension", "chrome"],
+  "keywords": [
+    "misinformation",
+    "detector",
+    "browser-extension",
+    "chrome"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "csv-parse": "^6.1.0"
   }
 }

@@ -12,6 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const { parse } = require('csv-parse/sync');
 
 // Load config
 const configPath = path.join(__dirname, '../docs/config.json');
@@ -27,37 +28,19 @@ const supabase = createClient(config.supabaseUrl, config.supabaseKey);
 // Parse CSV file
 function parseCSV(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.trim().split('\n').filter(line => !line.startsWith('#')); // Skip comment lines
-  const headers = lines[0].split(',');
 
-  return lines.slice(1).map(line => {
-    // Handle CSV parsing with potential commas in fields
-    const values = [];
-    let currentValue = '';
-    let insideQuotes = false;
+  // Remove comment lines
+  const lines = content.split('\n').filter(line => !line.startsWith('#'));
+  const csvContent = lines.join('\n');
 
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-
-      if (char === '"') {
-        insideQuotes = !insideQuotes;
-      } else if (char === ',' && !insideQuotes) {
-        values.push(currentValue);
-        currentValue = '';
-      } else {
-        currentValue += char;
-      }
-    }
-    values.push(currentValue); // Push the last value
-
-    // Create object from headers and values
-    const row = {};
-    headers.forEach((header, index) => {
-      row[header.trim()] = values[index]?.trim() || null;
-    });
-
-    return row;
+  // Use csv-parse library for proper CSV parsing
+  const records = parse(csvContent, {
+    columns: true,
+    skip_empty_lines: true,
+    relax_column_count: true
   });
+
+  return records;
 }
 
 // Convert CSV row to database record
@@ -140,6 +123,10 @@ async function seedDatabase(records) {
   // Insert links
   if (linkRecords.length > 0) {
     console.log(`   Inserting ${linkRecords.length} flagged links...`);
+
+    // Debug: Show first record
+    console.log('   Debug - First link record:', JSON.stringify(linkRecords[0], null, 2));
+
     const { data, error } = await supabase
       .from('flagged_links')
       .insert(linkRecords)
@@ -147,6 +134,7 @@ async function seedDatabase(records) {
 
     if (error) {
       console.error(`   ❌ Error inserting links:`, error.message);
+      console.error(`   Error details:`, error);
       errorCount += linkRecords.length;
     } else {
       console.log(`   ✓ Inserted ${data.length} flagged links`);

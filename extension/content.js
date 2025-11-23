@@ -422,6 +422,7 @@ async function submitFlag() {
         flagData.llm_agrees = verificationResult.agrees_with_flag;
         flagData.llm_reasoning = verificationResult.reasoning;
         flagData.llm_sources = JSON.stringify(verificationResult.sources);
+        flagData.ai_verification_status = verificationResult.agrees_with_flag ? 'ai_agreed' : 'ai_disagreed';
 
         if (!verificationResult.agrees_with_flag) {
           // LLM disagrees with the flag - ask user for confirmation
@@ -445,7 +446,10 @@ async function submitFlag() {
         showNotification('AI verification failed, proceeding without verification', 'warning');
         flagData.llm_verified = false;
         flagData.llm_error = verificationError.message;
+        flagData.ai_verification_status = 'verification_disabled';
       }
+    } else {
+      flagData.ai_verification_status = 'verification_disabled';
     }
     const savedFlag = await saveFlagToDatabase(flagData);
 

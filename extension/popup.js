@@ -27,6 +27,7 @@ async function init() {
   await loadFlagCount();
 
   // Set up event listeners
+  document.getElementById('scan-page-btn').addEventListener('click', scanPageForMisinformation);
   document.getElementById('flag-page-btn').addEventListener('click', showFlagPageModal);
   document.getElementById('refresh-btn').addEventListener('click', refreshFlags);
   document.getElementById('settings-btn').addEventListener('click', toggleSettings);
@@ -365,6 +366,56 @@ async function saveLinkFlagToDatabase(flagData) {
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}
+
+// Scan page for misinformation
+async function scanPageForMisinformation() {
+  const btn = document.getElementById('scan-page-btn');
+  btn.textContent = 'Scanning...';
+  btn.disabled = true;
+
+  try {
+    // Send message to content script to start scan
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'scanForMisinformation'
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error sending message:', chrome.runtime.lastError);
+        btn.textContent = 'Error - Try refresh';
+        setTimeout(() => {
+          btn.textContent = 'Scan for Misinformation';
+          btn.disabled = false;
+        }, 2000);
+        return;
+      }
+
+      if (response && response.success) {
+        btn.textContent = `Found ${response.count} suspicious items`;
+
+        // Reload flag count
+        setTimeout(async () => {
+          await loadFlagCount();
+          btn.textContent = 'Scan for Misinformation';
+          btn.disabled = false;
+        }, 2000);
+      } else {
+        btn.textContent = response?.error || 'Error scanning';
+        setTimeout(() => {
+          btn.textContent = 'Scan for Misinformation';
+          btn.disabled = false;
+        }, 2000);
+      }
+    });
+  } catch (error) {
+    console.error('Error scanning page:', error);
+    btn.textContent = 'Error';
+    setTimeout(() => {
+      btn.textContent = 'Scan for Misinformation';
+      btn.disabled = false;
+    }, 2000);
   }
 }
 

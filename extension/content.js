@@ -527,6 +527,21 @@ function highlightElement(element, flagType, flagData = null) {
     element.setAttribute('data-flag-confidence', flagData.confidence || '50');
     element.setAttribute('data-flag-id', flagData.id || '');
 
+    // Handle preflags (AI-detected, not saved to DB yet)
+    if (flagData._isPreflag) {
+      element.classList.add('misinfo-ai-detected');
+      element.setAttribute('data-ai-detected', 'true');
+      element.setAttribute('data-preflag', 'true');
+      element.setAttribute('data-chunk', flagData.content);
+
+      // Store sources for preflags
+      if (flagData._sources) {
+        element.setAttribute('data-flag-sources', JSON.stringify(flagData._sources));
+      }
+
+      console.log('✓ Added AI preflag classes to element');
+    }
+
     // Add confidence class for styling (legacy support)
     if (flagData.confidence === 'uncertain') {
       element.classList.add('misinfo-uncertain');
@@ -576,6 +591,8 @@ function showFlagInfoPopup(element, event) {
   const date = element.getAttribute('data-flag-date');
   const confidence = element.getAttribute('data-flag-confidence') || '50';
   const flagId = element.getAttribute('data-flag-id');
+  const isAiDetected = element.getAttribute('data-ai-detected') === 'true';
+  const sourcesStr = element.getAttribute('data-flag-sources');
 
   // Create popup
   flagInfoPopup = document.createElement('div');
@@ -593,25 +610,66 @@ function showFlagInfoPopup(element, event) {
   else if (confidenceValue <= 33) confidenceLabel = 'Low';
   const confidenceText = ` (${confidenceValue}% - ${confidenceLabel})`;
 
+  // Parse sources if available
+  let sourcesHtml = '';
+  if (sourcesStr) {
+    try {
+      const sources = JSON.parse(sourcesStr);
+      if (sources && sources.length > 0) {
+        sourcesHtml = `
+          <div class="misinfo-flag-info-sources">
+            <strong>Sources:</strong>
+            <ul>
+              ${sources.map(src => `<li><a href="${escapeHtml(src)}" target="_blank" rel="noopener">${escapeHtml(src)}</a></li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+    } catch (e) {
+      console.error('Error parsing sources:', e);
+    }
+  }
+
+  const isPreflag = element.getAttribute('data-preflag') === 'true';
+  const aiDetectedBadge = isAiDetected ? '<span class="misinfo-ai-badge">AI Pre-flagged</span>' : '';
+
   flagInfoPopup.innerHTML = `
     <div class="misinfo-flag-info-content">
       <div class="misinfo-flag-info-header">
-        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}">${flagType}${confidenceText}</span>
+        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}">${flagType}</span>
+        ${aiDetectedBadge}
       </div>
       ${note ? `<div class="misinfo-flag-info-note">${escapeHtml(note)}</div>` : '<div class="misinfo-flag-info-note-empty">No additional notes</div>'}
-      ${dateStr ? `<div class="misinfo-flag-info-date">Flagged: ${dateStr}</div>` : ''}
-      <button class="misinfo-unflag-button" data-flag-id="${flagId || ''}">Unflag this content</button>
+      ${sourcesHtml}
+      ${dateStr ? `<div class="misinfo-flag-info-date">Detected: ${dateStr}</div>` : ''}
+      ${isPreflag ? '<button class="misinfo-confirm-button">Confirm and Flag</button>' : ''}
+      <button class="misinfo-unflag-button" data-flag-id="${flagId || ''}">Dismiss</button>
     </div>
   `;
 
   document.body.appendChild(flagInfoPopup);
 
-  // Add unflag button listener
+  // Add confirm button listener (for preflags)
+  const confirmBtn = flagInfoPopup.querySelector('.misinfo-confirm-button');
+  if (confirmBtn && isPreflag) {
+    confirmBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await confirmPreflag(element);
+    });
+  }
+
+  // Add unflag/dismiss button listener
   const unflagBtn = flagInfoPopup.querySelector('.misinfo-unflag-button');
-  if (unflagBtn && flagId) {
+  if (unflagBtn) {
     unflagBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      await unflagContent(flagId, element);
+      if (isPreflag) {
+        // Just remove the highlight for preflags
+        dismissPreflag(element);
+      } else if (flagId) {
+        // Unflag from database for confirmed flags
+        await unflagContent(flagId, element);
+      }
     });
   }
 
@@ -851,6 +909,12 @@ let linkFlagData = null;
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'flagLink') {
     showLinkFlagDialog(request.linkUrl, request.flagType);
+  } else if (request.action === 'scanForMisinformation') {
+    // Handle scan request
+    handleScanForMisinformation()
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Keep channel open for async response
   }
 });
 
@@ -1178,6 +1242,214 @@ function removeHighlight(element) {
     const textContent = element.textContent;
     parent.innerHTML = parent.innerHTML.replace(element.outerHTML, textContent);
   }
+}
+
+// AI Misinformation Scanner
+async function handleScanForMisinformation() {
+  console.log('=== Starting misinformation scan ===');
+
+  try {
+    // Check if scanner module is loaded
+    if (!window.MisinfoScanner) {
+      throw new Error('Scanner module not loaded. Try refreshing the page.');
+    }
+
+    // Show loading dialog
+    const loadingDialog = showLoadingDialog();
+    loadingDialog.querySelector('.misinfo-loading-content h3').textContent = 'Scanning Page...';
+    loadingDialog.querySelector('.misinfo-loading-content p').textContent = 'AI is analyzing page content for misinformation';
+
+    // Check if API key is available
+    const apiKey = await window.LLMVerifier.getApiKey();
+    console.log('API key available:', !!apiKey);
+
+    if (!apiKey) {
+      loadingDialog.remove();
+      showNotification('OpenAI API key required. Please set it in Settings.', 'error');
+      return { success: false, error: 'API key not configured' };
+    }
+
+    // Run scan
+    console.log('Starting paragraph scan...');
+    const results = await window.MisinfoScanner.scanPageForMisinformation({
+      apiKey,
+      onProgress: (progress) => {
+        console.log(`Progress: ${progress.current}/${progress.total}`);
+        loadingDialog.querySelector('.misinfo-loading-content p').textContent =
+          `Processing paragraph ${progress.current} of ${progress.total}...`;
+      }
+    });
+
+    loadingDialog.remove();
+
+    console.log(`Scan complete. Found ${results.length} suspicious paragraphs.`);
+
+    // Highlight each suspicious chunk (as preflag - not saved to DB yet)
+    let savedCount = 0;
+    console.log(`\n=== HIGHLIGHTING ${results.length} SUSPICIOUS PARAGRAPHS ===`);
+
+    for (const result of results) {
+      console.log('\n--- Attempting to highlight ---');
+      console.log('Chunk text:', result.chunk);
+      console.log('Reasoning:', result.reasoning);
+      console.log('Sources:', result.sources);
+
+      const highlighted = await highlightSuspiciousText(result);
+      if (highlighted) {
+        savedCount++;
+        console.log('✓ Successfully highlighted!');
+      } else {
+        console.log('✗ Failed to highlight (could not find matching paragraph)');
+      }
+    }
+
+    console.log(`\n=== HIGHLIGHTING COMPLETE: ${savedCount}/${results.length} paragraphs highlighted ===`);
+
+    if (savedCount > 0) {
+      showNotification(`Found and highlighted ${savedCount} suspicious item(s)`, 'success');
+    } else if (results.length > 0) {
+      showNotification(`Found ${results.length} suspicious items but could not highlight them`, 'error');
+    } else {
+      showNotification('No misinformation detected on this page', 'success');
+    }
+
+    console.log('=== Scan completed successfully ===');
+    return { success: true, count: savedCount };
+
+  } catch (error) {
+    console.error('Error scanning for misinformation:', error);
+    console.error('Error stack:', error.stack);
+
+    // Remove loading dialog if it exists
+    const loadingDialog = document.querySelector('.misinfo-loading-dialog');
+    if (loadingDialog) loadingDialog.remove();
+
+    showNotification(`Scan error: ${error.message}`, 'error');
+    return { success: false, error: error.message };
+  }
+}
+
+// Find and highlight suspicious text in the DOM (use EXACT same approach as loadAndHighlightFlags)
+async function highlightSuspiciousText(result) {
+  const { chunk, reasoning, sources } = result;
+
+  console.log('Using highlightTextContent approach for:', chunk.substring(0, 80));
+
+  // Use the EXACT same approach as the working system - call highlightTextContent
+  // But we need to modify it slightly for preflags
+
+  // Create a fake flag data object that matches the DB structure
+  const fakeFlagData = {
+    content: chunk,
+    content_type: 'text',
+    flag_type: 'misinformation',
+    note: reasoning,
+    confidence: 85,
+    created_at: new Date().toISOString(),
+    // Add preflag-specific data as attributes
+    _isPreflag: true,
+    _sources: sources
+  };
+
+  // Call the existing highlightTextContent function
+  highlightTextContentPreflag(chunk, 'misinformation', fakeFlagData);
+
+  console.log('✓ Called highlightTextContent for preflag');
+  return true;
+}
+
+// Modified version of highlightTextContent for preflags
+function highlightTextContentPreflag(text, flagType, flagData) {
+  console.log('highlightTextContentPreflag called with text:', text.substring(0, 100));
+
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  const nodesToHighlight = [];
+  let node;
+
+  while (node = walker.nextNode()) {
+    if (node.textContent.includes(text)) {
+      nodesToHighlight.push(node);
+      console.log('Found matching text node');
+    }
+  }
+
+  console.log(`Found ${nodesToHighlight.length} text nodes to highlight`);
+
+  nodesToHighlight.forEach(node => {
+    // Call the EXISTING highlightElement function - it already works perfectly!
+    highlightElement(node, flagType, {
+      ...flagData,
+      // Add preflag marker
+      _isPreflag: true
+    });
+  });
+}
+
+// Confirm a preflag and save to database
+async function confirmPreflag(element) {
+  try {
+    hideFlagInfoPopup();
+
+    const chunk = element.getAttribute('data-chunk');
+    const reasoning = element.getAttribute('data-flag-note');
+    const sourcesStr = element.getAttribute('data-flag-sources');
+    const sources = sourcesStr ? JSON.parse(sourcesStr) : [];
+
+    // Save to database
+    const flagData = {
+      url: window.location.href,
+      page_url: window.location.origin + window.location.pathname,
+      content: chunk,
+      content_type: 'text',
+      flag_type: 'misinformation',
+      note: `AI Detection: ${reasoning}\n\nSources: ${sources.join(', ')}`,
+      confidence: 85, // Default confidence for AI detections
+      username: username || 'anonymous',
+      ai_verification_status: 'ai_detected',
+      selector: generateSelector(element),
+      timestamp: new Date().toISOString()
+    };
+
+    const savedFlag = await saveFlagToDatabase(flagData);
+
+    if (savedFlag) {
+      // Update element to mark as confirmed
+      element.removeAttribute('data-preflag');
+      element.setAttribute('data-flag-id', savedFlag.id);
+
+      // Change styling to confirmed flag
+      element.classList.remove('misinfo-ai-detected');
+      element.classList.add('misinfo-confirmed');
+
+      showNotification('Flag confirmed and saved!', 'success');
+    }
+  } catch (error) {
+    console.error('Error confirming preflag:', error);
+    showNotification('Error saving flag', 'error');
+  }
+}
+
+// Dismiss a preflag without saving
+function dismissPreflag(element) {
+  hideFlagInfoPopup();
+
+  // Remove all highlight classes and attributes
+  element.classList.remove('misinfo-highlighted', 'misinfo-ai-detected');
+  element.removeAttribute('data-flag-type');
+  element.removeAttribute('data-flag-note');
+  element.removeAttribute('data-flag-sources');
+  element.removeAttribute('data-flag-date');
+  element.removeAttribute('data-ai-detected');
+  element.removeAttribute('data-preflag');
+  element.removeAttribute('data-chunk');
+
+  showNotification('Pre-flag dismissed', 'info');
 }
 
 // Initialize when DOM is ready

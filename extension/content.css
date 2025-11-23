@@ -49,6 +49,30 @@
   background-color: rgba(158, 158, 158, 0.2) !important;
 }
 
+/* AI-detected suspicious content - Pink highlight (preflag) */
+.misinfo-highlighted.misinfo-ai-detected {
+  border-color: #ff69b4 !important;
+  background-color: rgba(255, 105, 180, 0.25) !important;
+  border-style: dashed !important; /* Dashed border to indicate AI detection */
+}
+
+.misinfo-highlighted.misinfo-ai-detected:hover {
+  background-color: rgba(255, 105, 180, 0.4) !important;
+  box-shadow: 0 0 8px rgba(255, 105, 180, 0.7) !important;
+}
+
+/* Confirmed AI-detected content - Solid red */
+.misinfo-highlighted.misinfo-confirmed {
+  border-color: #f44336 !important;
+  background-color: rgba(244, 67, 54, 0.2) !important;
+  border-style: solid !important;
+}
+
+.misinfo-highlighted.misinfo-confirmed:hover {
+  background-color: rgba(244, 67, 54, 0.35) !important;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.6) !important;
+}
+
 .misinfo-highlighted[data-flag-type="other"]:hover {
   background-color: rgba(158, 158, 158, 0.35) !important;
   box-shadow: 0 0 8px rgba(158, 158, 158, 0.6) !important;
@@ -329,6 +353,85 @@
   color: #666;
   text-align: right;
   margin-bottom: 8px;
+}
+
+/* AI Detection Badge */
+.misinfo-ai-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  margin-left: 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #ff69b4;
+  color: white;
+  border: 1px solid #ff1493;
+}
+
+/* Sources section */
+.misinfo-flag-info-sources {
+  font-size: 12px;
+  margin: 10px 0;
+  padding: 8px;
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  border-left: 3px solid #2196f3;
+}
+
+.misinfo-flag-info-sources strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #1565c0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.misinfo-flag-info-sources ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.misinfo-flag-info-sources li {
+  margin: 4px 0;
+}
+
+.misinfo-flag-info-sources a {
+  color: #1976d2;
+  text-decoration: none;
+  word-break: break-all;
+  font-size: 11px;
+}
+
+.misinfo-flag-info-sources a:hover {
+  text-decoration: underline;
+}
+
+/* Confirm button for AI-detected content */
+.misinfo-confirm-button {
+  width: 100%;
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  pointer-events: auto;
+}
+
+.misinfo-confirm-button:hover {
+  background-color: #45a049;
+}
+
+.misinfo-confirm-button:active {
+  background-color: #388e3c;
 }
 
 /* Unflag button */

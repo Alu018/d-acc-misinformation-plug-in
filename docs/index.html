@@ -335,6 +335,8 @@
         const links = linksResponse.data;
         const content = contentResponse.data;
 
+        console.log(`Loaded ${links.length} links and ${content.length} content items`);
+
         updateStats(links, content);
         displayLinks(links);
         displayContent(content);
@@ -361,6 +363,7 @@
       }
 
       try {
+        console.log('Deleting link with ID:', id);
         const { error } = await _supabase
           .from('flagged_links')
           .delete()
@@ -368,8 +371,10 @@
 
         if (error) throw error;
 
+        console.log('Delete successful, reloading data...');
         // Reload data after successful delete
         await loadData();
+        console.log('Data reloaded');
       } catch (error) {
         console.error('Error deleting link:', error);
         alert('Failed to delete link. Please try again.');

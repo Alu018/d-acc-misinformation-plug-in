@@ -1,0 +1,20 @@
+{
+  "name": "ai-threat-detector",
+  "version": "1.0.0",
+  "description": "AI Threat Detector - Browser extension and dashboard for detecting misinformation",
+  "scripts": {
+    "seed-db": "node scripts/seed-database.js"
+  },
+  "keywords": [
+    "misinformation",
+    "detector",
+    "browser-extension",
+    "chrome"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "csv-parse": "^6.1.0"
+  }
+}

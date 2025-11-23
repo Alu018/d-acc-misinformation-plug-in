@@ -1,0 +1,103 @@
+# SYNTHETIC DATA - FOR TESTING/DEMONSTRATION ONLY
+# WARNING: This data is COMPLETELY FICTIONAL and created for testing purposes.
+# All URLs, content, and examples are synthetic and do not represent real threats.
+# DO NOT visit any URLs listed here - they are fake examples for demonstration.
+type,flag_type,url,content,content_type,page_url,note,confidence,flagged_by_url
+link,scam,https://bit.ly/free-iphone-14-giveaway,,,https://reddit.com/r/technology/comments/abc123,Suspicious shortened URL promising free iPhone,85,https://reddit.com/r/technology
+link,misinformation,https://naturalnewsdaily.com/vaccines-cause-autism-study,,,https://facebook.com/groups/parentconcerns,Debunked vaccine misinformation,92,https://facebook.com/groups/parentconcerns
+content,misinformation,,BREAKING: Scientists confirm 5G towers spreading COVID-19 through radio waves,text,https://twitter.com/conspiracy_news/status/1234567890,Completely false 5G conspiracy theory,95,https://twitter.com/conspiracy_news
+link,scam,https://amaz0n-prime-deals.xyz/verification,,,https://reddit.com/r/deals,Phishing site mimicking Amazon,88,https://reddit.com/r/deals
+content,fake_profile,,I'm a doctor and I recommend this weight loss tea! Lost 50 lbs in 2 weeks!,text,https://instagram.com/p/xyz123,Fake testimonial with unrealistic claims,78,https://instagram.com/p/xyz123
+link,misinformation,https://truthpatriot.net/election-fraud-evidence,,,https://facebook.com/groups/politics2024,Unverified election fraud claims,90,https://facebook.com/groups/politics2024
+content,scam,,Click here to claim your $1000 Walmart gift card! You've been selected as a winner!,text,https://reddit.com/r/freebies/comments/def456,Classic gift card scam,93,https://reddit.com/r/freebies
+link,fake_profile,https://linkedin.com/in/ceo-elon-musk-verified,,,https://twitter.com/startup_news,Impersonation account,82,https://twitter.com/startup_news
+content,misinformation,,The government is putting microchips in COVID vaccines to track citizens,text,https://facebook.com/groups/freedomfighters,Debunked microchip conspiracy,88,https://facebook.com/groups/freedomfighters
+link,scam,https://paypal-security-verify.com/account,,,https://twitter.com/deals_alerts,PayPal phishing site,91,https://twitter.com/deals_alerts
+content,other,,This cryptocurrency will 100% make you a millionaire by next week! Don't miss out!,text,https://reddit.com/r/cryptocurrency/comments/ghi789,Unrealistic investment promise,75,https://reddit.com/r/cryptocurrency
+link,misinformation,https://naturalhealing.org/cure-cancer-baking-soda,,,https://facebook.com/groups/alternativemedicine,Dangerous medical misinformation,94,https://facebook.com/groups/alternativemedicine
+content,scam,,Nigerian prince needs help transferring $10 million. Will share 20% with you!,text,https://reddit.com/r/Scams/comments/jkl012,Classic Nigerian prince scam,96,https://reddit.com/r/Scams
+link,fake_profile,https://twitter.com/real_bill_gates_official,,,https://reddit.com/r/technology,Celebrity impersonation account,86,https://reddit.com/r/technology
+content,misinformation,,Climate change is a hoax invented by scientists to get research funding,text,https://facebook.com/groups/climatetruth,Climate change denial,87,https://facebook.com/groups/climatetruth
+link,scam,https://apple-icloud-security.net/unlock,,,https://twitter.com/tech_support,Apple iCloud phishing,89,https://twitter.com/tech_support
+content,fake_profile,,I'm a licensed nutritionist. Buy my supplements to cure diabetes naturally!,text,https://instagram.com/p/mno345,Fake credentials selling supplements,80,https://instagram.com/p/mno345
+link,misinformation,https://freedomnews.tv/flat-earth-proven-nasa-lies,,,https://reddit.com/r/conspiracy,Flat earth conspiracy theory,83,https://reddit.com/r/conspiracy
+content,scam,,You've won the lottery! Send $500 processing fee to claim your $5 million prize!,text,https://facebook.com/groups/winnerscircle,Advance-fee lottery scam,97,https://facebook.com/groups/winnerscircle
+link,scam,https://crypto-wallet-verify.com/metamask,,,https://reddit.com/r/ethereum,Cryptocurrency wallet phishing,90,https://reddit.com/r/ethereum
+content,misinformation,,Drinking bleach cures autism and cancer. Big Pharma doesn't want you to know!,text,https://facebook.com/groups/naturalcures,Extremely dangerous health misinformation,99,https://facebook.com/groups/naturalcures
+link,fake_profile,https://instagram.com/verified_kim_kardashian_real,,,https://twitter.com/celebrity_news,Celebrity impersonation,84,https://twitter.com/celebrity_news
+content,other,,This one weird trick will add 6 inches to your height in 30 days!,text,https://reddit.com/r/tall/comments/pqr678,Impossible physical claim,72,https://reddit.com/r/tall
+link,misinformation,https://patriotnews.info/democrats-rigging-machines,,,https://facebook.com/groups/voters2024,Unverified voter fraud claims,91,https://facebook.com/groups/voters2024
+content,scam,,Work from home and make $10,000 per week with no experience required!,text,https://reddit.com/r/WorkOnline/comments/stu901,Unrealistic work-from-home scam,85,https://reddit.com/r/WorkOnline
+link,scam,https://netflix-billing-update.net/payment,,,https://twitter.com/streaming_deals,Netflix phishing site,88,https://twitter.com/streaming_deals
+content,fake_profile,,As a Harvard professor, I endorse this brain pill that increases IQ by 50 points,text,https://facebook.com/ads/brainsupplement,Fake academic endorsement,81,https://facebook.com/ads/brainsupplement
+link,misinformation,https://truthseeker.news/moon-landing-hoax-proof,,,https://reddit.com/r/conspiracy,Moon landing conspiracy,79,https://reddit.com/r/conspiracy
+content,misinformation,,Eating alkaline foods cures all diseases including cancer and AIDS,text,https://instagram.com/p/vwx234,Debunked alternative medicine claim,86,https://instagram.com/p/vwx234
+link,scam,https://irs-tax-refund-claim.com/verification,,,https://reddit.com/r/personalfinance,IRS impersonation phishing,93,https://reddit.com/r/personalfinance
+content,scam,,You've been approved for a $50,000 loan! Click to accept funds immediately!,text,https://facebook.com/groups/badcredit,Predatory loan scam,87,https://facebook.com/groups/badcredit
+link,fake_profile,https://twitter.com/officialdonald_trump_real,,,https://reddit.com/r/politics,Political figure impersonation,85,https://reddit.com/r/politics
+content,misinformation,,5G networks cause brain cancer. Turn off your phone at night!,text,https://facebook.com/groups/healthawareness,5G health misinformation,84,https://facebook.com/groups/healthawareness
+link,misinformation,https://globalnewsnetwork.info/bill-gates-depopulation,,,https://twitter.com/news_alerts,Bill Gates conspiracy theory,88,https://twitter.com/news_alerts
+content,other,,Lose 30 pounds in 7 days with this celebrity secret diet!,text,https://instagram.com/p/abc567,Unrealistic weight loss claim,76,https://instagram.com/p/abc567
+link,scam,https://microsoft-windows-security.net/virus-removal,,,https://reddit.com/r/techsupport,Tech support scam,92,https://reddit.com/r/techsupport
+content,scam,,Your package is stuck at customs. Pay $50 fee to release it immediately.,text,https://facebook.com/messages/shipping_alert,Fake shipping fee scam,89,https://facebook.com/messages/shipping_alert
+link,scam,https://coinbase-wallet-verify.org/security,,,https://reddit.com/r/CryptoCurrency,Coinbase phishing attack,91,https://reddit.com/r/CryptoCurrency
+content,fake_profile,,I'm a certified financial advisor. Invest in my exclusive Bitcoin fund for guaranteed 500% returns!,text,https://linkedin.com/in/fake-advisor,Fake financial advisor scam,83,https://linkedin.com/in/fake-advisor
+link,misinformation,https://freedomtruth.tv/chemtrails-mind-control,,,https://facebook.com/groups/awakenedcitizens,Chemtrails conspiracy theory,82,https://facebook.com/groups/awakenedcitizens
+content,misinformation,,The Earth is only 6,000 years old. Evolution is a lie taught in schools.,text,https://facebook.com/groups/creationists,Young Earth creationism misinformation,78,https://facebook.com/groups/creationists
+link,scam,https://venmo-payment-pending.com/verify,,,https://twitter.com/payment_apps,Venmo phishing site,90,https://twitter.com/payment_apps
+content,scam,,Congratulations! You've been selected for a free cruise! Just pay $299 port fees.,text,https://reddit.com/r/travel/comments/yza123,Vacation club scam,86,https://reddit.com/r/travel
+link,fake_profile,https://instagram.com/realoprah_official_verified,,,https://reddit.com/r/entertainment,Oprah impersonation account,87,https://reddit.com/r/entertainment
+content,misinformation,,COVID-19 was created in a lab as a bioweapon to reduce world population,text,https://facebook.com/groups/truthseekers,COVID origin conspiracy theory,89,https://facebook.com/groups/truthseekers
+link,misinformation,https://naturalhealthinfo.org/vaccines-autism-mercury,,,https://reddit.com/r/parenting,Vaccine-autism misinformation,93,https://reddit.com/r/parenting
+content,other,,This magic bracelet will balance your energy and cure chronic pain!,text,https://instagram.com/p/def890,Pseudoscience product claim,74,https://instagram.com/p/def890
+link,scam,https://spotify-premium-free.net/upgrade,,,https://reddit.com/r/spotify,Spotify account phishing,85,https://reddit.com/r/spotify
+content,scam,,You're owed a tax refund of $3,847! Verify your Social Security Number to claim it.,text,https://facebook.com/messages/irs_refund,Tax refund phishing,94,https://facebook.com/messages/irs_refund
+link,scam,https://paypal-resolution-center.org/dispute,,,https://twitter.com/ecommerce_tips,PayPal dispute phishing,88,https://twitter.com/ecommerce_tips
+content,fake_profile,,As a former FDA scientist, I can confirm that pharmaceutical companies are poisoning us,text,https://facebook.com/groups/bigpharmatruth,Fake FDA credentials,82,https://facebook.com/groups/bigpharmatruth
+link,misinformation,https://globalresearch.news/covid-vaccine-deaths,,,https://reddit.com/r/Coronavirus,Vaccine death misinformation,91,https://reddit.com/r/Coronavirus
+content,misinformation,,Drinking hydrogen peroxide kills cancer cells and detoxifies your body,text,https://facebook.com/groups/naturalmedicine,Dangerous health advice,96,https://facebook.com/groups/naturalmedicine
+link,fake_profile,https://twitter.com/verified_warren_buffett,,,https://reddit.com/r/investing,Warren Buffett impersonation,86,https://reddit.com/r/investing
+content,scam,,Final notice: Your car warranty is about to expire. Renew now for $1,299!,text,https://reddit.com/r/cars/comments/bcd234,Extended warranty scam,83,https://reddit.com/r/cars
+link,scam,https://banking-security-alert.com/chase-verify,,,https://twitter.com/banking_news,Chase Bank phishing,92,https://twitter.com/banking_news
+content,other,,Align your chakras with this $500 crystal to manifest unlimited wealth,text,https://instagram.com/p/ghi123,Overpriced pseudoscience product,71,https://instagram.com/p/ghi123
+link,misinformation,https://truthnews.org/george-soros-funded-antifa,,,https://facebook.com/groups/patriotwarriors,George Soros conspiracy,84,https://facebook.com/groups/patriotwarriors
+content,misinformation,,Wifi routers cause infertility and should be turned off when not in use,text,https://facebook.com/groups/emfsafety,EMF radiation misinformation,77,https://facebook.com/groups/emfsafety
+link,scam,https://amazon-account-suspended.net/reactivate,,,https://reddit.com/r/amazondeals,Amazon account phishing,90,https://reddit.com/r/amazondeals
+content,fake_profile,,I'm a licensed doctor recommending colloidal silver for COVID-19 treatment,text,https://twitter.com/health_advice_dr,Fake doctor promoting unproven treatment,85,https://twitter.com/health_advice_dr
+link,misinformation,https://awakened.news/new-world-order-agenda,,,https://reddit.com/r/conspiracy,New World Order conspiracy,81,https://reddit.com/r/conspiracy
+content,scam,,Your computer has been infected with a virus! Call this number immediately for support.,text,https://facebook.com/ads/pc_security,Tech support scam popup,88,https://facebook.com/ads/pc_security
+link,scam,https://usps-package-redelivery.com/tracking,,,https://twitter.com/shipping_updates,USPS phishing site,89,https://twitter.com/shipping_updates
+content,misinformation,,Fluoride in water is a government plot to make the population docile and controllable,text,https://facebook.com/groups/purefreedom,Water fluoridation conspiracy,80,https://facebook.com/groups/purefreedom
+link,fake_profile,https://instagram.com/therock_official_verified,,,https://reddit.com/r/movies,The Rock impersonation account,87,https://reddit.com/r/movies
+content,other,,This detox tea will cleanse 20 pounds of toxic waste from your colon!,text,https://instagram.com/p/jkl456,Detox scam product,73,https://instagram.com/p/jkl456
+link,scam,https://wells-fargo-security.net/account-verify,,,https://reddit.com/r/banking,Wells Fargo phishing,91,https://reddit.com/r/banking
+content,scam,,You've been pre-approved for a credit card with $10,000 limit! No credit check required!,text,https://facebook.com/ads/creditoffer,Credit card scam,84,https://facebook.com/ads/creditoffer
+link,misinformation,https://realscience.info/climate-cooling-not-warming,,,https://twitter.com/science_facts,Climate change denial,86,https://twitter.com/science_facts
+content,fake_profile,,As a nutritionist, I guarantee my supplements will cure your diabetes in 30 days,text,https://instagram.com/p/mno789,Fake nutritionist making medical claims,83,https://instagram.com/p/mno789
+link,scam,https://facebook-security-team.com/account-recovery,,,https://reddit.com/r/facebook,Facebook account phishing,88,https://reddit.com/r/facebook
+content,misinformation,,The pharmaceutical industry has the cure for cancer but hides it to make money,text,https://facebook.com/groups/naturalhealing,Cancer cure conspiracy,85,https://facebook.com/groups/naturalhealing
+link,misinformation,https://freedompress.tv/mandatory-vaccines-unconstitutional,,,https://reddit.com/r/libertarian,Anti-vaccine misinformation,87,https://reddit.com/r/libertarian
+content,scam,,Invest $500 in my crypto trading bot and make $5,000 per day guaranteed!,text,https://twitter.com/crypto_trader_pro,Cryptocurrency scam,90,https://twitter.com/crypto_trader_pro
+link,fake_profile,https://twitter.com/jeff_bezos_official_ceo,,,https://reddit.com/r/business,Jeff Bezos impersonation,84,https://reddit.com/r/business
+content,other,,Copper bracelets cure arthritis through magnetic healing properties!,text,https://facebook.com/groups/arthritissupport,Pseudoscience health product,69,https://facebook.com/groups/arthritissupport
+link,scam,https://ebay-dispute-resolution.net/claim,,,https://reddit.com/r/ebay,eBay phishing site,87,https://reddit.com/r/ebay
+content,misinformation,,Microwaving food destroys nutrients and causes cancer. Use only stovetop cooking.,text,https://facebook.com/groups/healthyliving,Microwave misinformation,76,https://facebook.com/groups/healthyliving
+link,scam,https://social-security-benefits.org/verify,,,https://twitter.com/retirement_info,Social Security phishing,93,https://twitter.com/retirement_info
+content,fake_profile,,I'm a celebrity trainer to the stars. Buy my fitness program for instant abs!,text,https://instagram.com/p/pqr012,Fake celebrity trainer credentials,79,https://instagram.com/p/pqr012
+link,misinformation,https://truthexposed.info/reptilian-government-leaders,,,https://reddit.com/r/conspiracy,Reptilian conspiracy theory,68,https://reddit.com/r/conspiracy
+content,scam,,You've inherited $5.2 million from a distant relative. Send legal fees to claim it.,text,https://facebook.com/messages/inheritance,Inheritance scam,95,https://facebook.com/messages/inheritance
+link,scam,https://apple-app-store-refund.com/claim,,,https://reddit.com/r/apple,Apple Store phishing,86,https://reddit.com/r/apple
+content,misinformation,,Essential oils can cure serious diseases like epilepsy and diabetes,text,https://instagram.com/p/stu345,Dangerous essential oils misinformation,88,https://instagram.com/p/stu345
+link,fake_profile,https://linkedin.com/in/mark-zuckerberg-meta-ceo,,,https://reddit.com/r/technology,Mark Zuckerberg impersonation,85,https://reddit.com/r/technology
+content,other,,This quantum healing device will cure any illness by aligning your frequencies!,text,https://facebook.com/groups/quantumhealth,Pseudoscience medical device,70,https://facebook.com/groups/quantumhealth
+link,scam,https://gmail-storage-upgrade.com/increase-space,,,https://twitter.com/tech_tips,Gmail phishing scam,89,https://twitter.com/tech_tips
+content,scam,,You've been randomly selected! Claim your free iPhone 15 now! Only pay $29.99 shipping.,text,https://reddit.com/r/freebies/comments/vwx678,Free iPhone scam,92,https://reddit.com/r/freebies
+link,misinformation,https://uncensored.news/deep-state-controlling-media,,,https://facebook.com/groups/realnews,Deep state conspiracy,82,https://facebook.com/groups/realnews
+content,fake_profile,,As a MIT graduate and AI expert, invest in my startup for 1000% returns guaranteed,text,https://linkedin.com/in/fake-mit-grad,Fake credentials investment scam,81,https://linkedin.com/in/fake-mit-grad
+link,scam,https://bank-of-america-alert.org/security,,,https://reddit.com/r/personalfinance,Bank of America phishing,90,https://reddit.com/r/personalfinance
+content,misinformation,,GMO foods cause autism and cancer. Only eat organic to stay healthy.,text,https://facebook.com/groups/organicfood,GMO misinformation,83,https://facebook.com/groups/organicfood
+link,misinformation,https://realhistory.info/holocaust-exaggerated-numbers,,,https://reddit.com/r/history,Holocaust denial,97,https://reddit.com/r/history
+content,scam,,Your account will be closed in 24 hours unless you verify your information now!,text,https://facebook.com/messages/account_alert,Account closure phishing,91,https://facebook.com/messages/account_alert
+link,fake_profile,https://twitter.com/elonmusk_tesla_verified,,,https://reddit.com/r/teslamotors,Elon Musk impersonation,89,https://reddit.com/r/teslamotors
+content,other,,Negative ion bracelets will protect you from 5G radiation and improve sleep!,text,https://instagram.com/p/yza901,5G protection scam product,72,https://instagram.com/p/yza901
+link,scam,https://tiktok-creator-fund-claim.com/payout,,,https://reddit.com/r/tiktok,TikTok phishing scam,86,https://reddit.com/r/tiktok

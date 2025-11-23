@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FlaggedContent, ContentType, FlagType, ConfidenceLevel } from '@/lib/types';
+import { FlaggedContent, ContentType, FlagType } from '@/lib/types';
 import FlaggedContentTable from '@/components/FlaggedContentTable';
 import FilterBar from '@/components/FilterBar';
 import StatsBar from '@/components/StatsBar';
@@ -17,7 +17,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [contentTypeFilter, setContentTypeFilter] = useState<ContentType | 'all'>('all');
   const [flagTypeFilter, setFlagTypeFilter] = useState<FlagType | 'all'>('all');
-  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceLevel | 'all'>('all');
+  const [confidenceFilter, setConfidenceFilter] = useState<'high' | 'medium' | 'low' | 'all'>('all');
 
   useEffect(() => {
     fetchData();
@@ -73,7 +73,12 @@ export default function Home() {
 
     // Confidence filter
     if (confidenceFilter !== 'all') {
-      filtered = filtered.filter((item) => item.confidence === confidenceFilter);
+      filtered = filtered.filter((item) => {
+        if (confidenceFilter === 'high') return item.confidence >= 67;
+        if (confidenceFilter === 'medium') return item.confidence >= 34 && item.confidence <= 66;
+        if (confidenceFilter === 'low') return item.confidence <= 33;
+        return true;
+      });
     }
 
     setFilteredData(filtered);

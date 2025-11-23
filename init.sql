@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS flagged_content (
   page_url TEXT NOT NULL,
   content TEXT NOT NULL,
   content_type VARCHAR(50) NOT NULL CHECK (content_type IN ('text', 'image', 'video', 'other')),
-  flag_type VARCHAR(50) NOT NULL CHECK (flag_type IN ('scam', 'misinformation', 'other')),
-  confidence VARCHAR(20) DEFAULT 'certain' CHECK (confidence IN ('certain', 'uncertain')),
+  flag_type VARCHAR(50) NOT NULL CHECK (flag_type IN ('scam', 'misinformation', 'fake_profile', 'other')),
+  confidence INTEGER DEFAULT 50 CHECK (confidence >= 0 AND confidence <= 100),
   note TEXT,
   selector TEXT,
   username TEXT,
@@ -23,10 +23,11 @@ CREATE INDEX idx_flag_type ON flagged_content(flag_type);
 CREATE TABLE IF NOT EXISTS flagged_links (
   id SERIAL PRIMARY KEY,
   url TEXT NOT NULL,
-  flag_type VARCHAR(50) NOT NULL CHECK (flag_type IN ('scam', 'misinformation', 'other')),
-  confidence VARCHAR(20) DEFAULT 'certain' CHECK (confidence IN ('certain', 'uncertain')),
+  flag_type VARCHAR(50) NOT NULL CHECK (flag_type IN ('scam', 'misinformation', 'fake_profile', 'other')),
+  confidence INTEGER DEFAULT 50 CHECK (confidence >= 0 AND confidence <= 100),
   note TEXT,
   flagged_by_url TEXT,
+  username TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 

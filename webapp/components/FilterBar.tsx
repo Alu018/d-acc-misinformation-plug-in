@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentType, FlagType, ConfidenceLevel } from '@/lib/types';
+import { ContentType, FlagType } from '@/lib/types';
 
 interface FilterBarProps {
   searchTerm: string;
@@ -9,8 +9,8 @@ interface FilterBarProps {
   setContentTypeFilter: (value: ContentType | 'all') => void;
   flagTypeFilter: FlagType | 'all';
   setFlagTypeFilter: (value: FlagType | 'all') => void;
-  confidenceFilter: ConfidenceLevel | 'all';
-  setConfidenceFilter: (value: ConfidenceLevel | 'all') => void;
+  confidenceFilter: 'high' | 'medium' | 'low' | 'all';
+  setConfidenceFilter: (value: 'high' | 'medium' | 'low' | 'all') => void;
   totalCount: number;
 }
 
@@ -119,6 +119,7 @@ export default function FilterBar({
             <option value="all">All Flags</option>
             <option value="scam">Scam</option>
             <option value="misinformation">Misinformation</option>
+            <option value="fake_profile">Fake Profile</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -135,13 +136,14 @@ export default function FilterBar({
             id="confidence"
             value={confidenceFilter}
             onChange={(e) =>
-              setConfidenceFilter(e.target.value as ConfidenceLevel | 'all')
+              setConfidenceFilter(e.target.value as 'high' | 'medium' | 'low' | 'all')
             }
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">All Levels</option>
-            <option value="certain">Certain</option>
-            <option value="uncertain">Uncertain</option>
+            <option value="high">High (67-100)</option>
+            <option value="medium">Medium (34-66)</option>
+            <option value="low">Low (0-33)</option>
           </select>
         </div>
       </div>

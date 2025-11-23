@@ -11,6 +11,7 @@ interface FlaggedContentTableProps {
 const flagTypeColors = {
   scam: 'bg-red-100 text-red-800 border-red-300',
   misinformation: 'bg-orange-100 text-orange-800 border-orange-300',
+  fake_profile: 'bg-purple-100 text-purple-800 border-purple-300',
   other: 'bg-gray-100 text-gray-800 border-gray-300',
 };
 
@@ -21,9 +22,14 @@ const contentTypeIcons = {
   other: '📄',
 };
 
-const confidenceBadges = {
-  certain: 'bg-green-100 text-green-800 border-green-300',
-  uncertain: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+const getConfidenceBadge = (confidence: number) => {
+  if (confidence >= 67) {
+    return { color: 'bg-green-100 text-green-800 border-green-300', label: 'High' };
+  } else if (confidence >= 34) {
+    return { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: 'Medium' };
+  } else {
+    return { color: 'bg-red-100 text-red-800 border-red-300', label: 'Low' };
+  }
 };
 
 export default function FlaggedContentTable({ data }: FlaggedContentTableProps) {
@@ -96,10 +102,10 @@ export default function FlaggedContentTable({ data }: FlaggedContentTableProps) 
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold border ${
-                      confidenceBadges[item.confidence]
+                      getConfidenceBadge(item.confidence).color
                     }`}
                   >
-                    {item.confidence}
+                    {item.confidence}% ({getConfidenceBadge(item.confidence).label})
                   </span>
                 </td>
                 <td className="px-6 py-4 max-w-md">

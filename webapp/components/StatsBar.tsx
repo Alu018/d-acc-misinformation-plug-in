@@ -11,9 +11,10 @@ export default function StatsBar({ data }: StatsBarProps) {
     total: data.length,
     scam: data.filter((item) => item.flag_type === 'scam').length,
     misinformation: data.filter((item) => item.flag_type === 'misinformation').length,
+    fake_profile: data.filter((item) => item.flag_type === 'fake_profile').length,
     other: data.filter((item) => item.flag_type === 'other').length,
-    certain: data.filter((item) => item.confidence === 'certain').length,
-    uncertain: data.filter((item) => item.confidence === 'uncertain').length,
+    high: data.filter((item) => item.confidence >= 67).length,
+    low: data.filter((item) => item.confidence <= 33).length,
   };
 
   const statCards = [
@@ -39,6 +40,13 @@ export default function StatsBar({ data }: StatsBarProps) {
       borderColor: 'border-orange-200',
     },
     {
+      label: 'Fake Profile',
+      value: stats.fake_profile,
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-700',
+      borderColor: 'border-purple-200',
+    },
+    {
       label: 'Other',
       value: stats.other,
       bgColor: 'bg-gray-50',
@@ -46,15 +54,15 @@ export default function StatsBar({ data }: StatsBarProps) {
       borderColor: 'border-gray-200',
     },
     {
-      label: 'Certain',
-      value: stats.certain,
+      label: 'High Confidence',
+      value: stats.high,
       bgColor: 'bg-green-50',
       textColor: 'text-green-700',
       borderColor: 'border-green-200',
     },
     {
-      label: 'Uncertain',
-      value: stats.uncertain,
+      label: 'Low Confidence',
+      value: stats.low,
       bgColor: 'bg-yellow-50',
       textColor: 'text-yellow-700',
       borderColor: 'border-yellow-200',
@@ -62,7 +70,7 @@ export default function StatsBar({ data }: StatsBarProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
       {statCards.map((stat) => (
         <div
           key={stat.label}

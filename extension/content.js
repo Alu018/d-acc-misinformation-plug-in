@@ -9,7 +9,7 @@ const MAX_CONTENT_LENGTH = 102400; // 100KB
 const MAX_NOTE_LENGTH = 5120; // 5KB
 const MAX_URL_LENGTH = 2048; // 2KB
 const MAX_SELECTOR_LENGTH = 2048; // 2KB
-const VALID_FLAG_TYPES = ['scam', 'misinformation', 'other'];
+const VALID_FLAG_TYPES = ['scam', 'misinformation', 'fake_profile', 'other'];
 const VALID_CONTENT_TYPES = ['text', 'image', 'video', 'other'];
 const VALID_URL_SCHEMES = ['http:', 'https:'];
 
@@ -149,20 +149,12 @@ function showFlagPopup(x, y) {
       <select id="misinfo-flag-type">
         <option value="scam">Scam</option>
         <option value="misinformation">Misinformation</option>
+        <option value="fake_profile">Fake Profile</option>
         <option value="other">Other</option>
       </select>
       <div class="misinfo-confidence-group">
-        <label class="misinfo-confidence-label">Confidence:</label>
-        <div class="misinfo-confidence-options">
-          <label class="misinfo-confidence-option">
-            <input type="radio" name="confidence" value="certain" checked>
-            <span>Certain</span>
-          </label>
-          <label class="misinfo-confidence-option">
-            <input type="radio" name="confidence" value="uncertain">
-            <span>Not quite certain</span>
-          </label>
-        </div>
+        <label class="misinfo-confidence-label">Confidence: <span id="misinfo-confidence-value">50</span>%</label>
+        <input type="range" id="misinfo-confidence-slider" min="0" max="100" value="50" step="1">
       </div>
       <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)" maxlength="${MAX_NOTE_LENGTH}"></textarea>
       <div class="misinfo-char-count">
@@ -192,6 +184,13 @@ function showFlagPopup(x, y) {
     noteCount.textContent = noteTextarea.value.length;
   });
 
+  // Update confidence slider value display
+  const confidenceSlider = document.getElementById('misinfo-confidence-slider');
+  const confidenceValue = document.getElementById('misinfo-confidence-value');
+  confidenceSlider.addEventListener('input', () => {
+    confidenceValue.textContent = confidenceSlider.value;
+  });
+
   // Close popup when clicking outside
   setTimeout(() => {
     document.addEventListener('click', handleOutsideClick);
@@ -218,7 +217,7 @@ function closePopup() {
 async function submitFlag() {
   const flagType = document.getElementById('misinfo-flag-type').value;
   const note = document.getElementById('misinfo-flag-note').value;
-  const confidence = document.querySelector('input[name="confidence"]:checked').value;
+  const confidence = parseInt(document.getElementById('misinfo-confidence-slider').value);
 
   if (!selectedContent) {
     console.error('No content selected');
@@ -675,20 +674,12 @@ function showLinkFlagDialog(linkUrl, initialFlagType) {
       <select id="misinfo-flag-type">
         <option value="scam" ${initialFlagType === 'scam' ? 'selected' : ''}>Scam</option>
         <option value="misinformation" ${initialFlagType === 'misinformation' ? 'selected' : ''}>Misinformation</option>
+        <option value="fake_profile" ${initialFlagType === 'fake_profile' ? 'selected' : ''}>Fake Profile</option>
         <option value="other" ${initialFlagType === 'other' ? 'selected' : ''}>Other</option>
       </select>
       <div class="misinfo-confidence-group">
-        <label class="misinfo-confidence-label">Confidence:</label>
-        <div class="misinfo-confidence-options">
-          <label class="misinfo-confidence-option">
-            <input type="radio" name="confidence" value="certain" checked>
-            <span>Certain</span>
-          </label>
-          <label class="misinfo-confidence-option">
-            <input type="radio" name="confidence" value="uncertain">
-            <span>Not quite certain</span>
-          </label>
-        </div>
+        <label class="misinfo-confidence-label">Confidence: <span id="misinfo-confidence-value-link">50</span>%</label>
+        <input type="range" id="misinfo-confidence-slider-link" min="0" max="100" value="50" step="1">
       </div>
       <textarea id="misinfo-flag-note" placeholder="Additional notes (optional)" maxlength="${MAX_NOTE_LENGTH}"></textarea>
       <div class="misinfo-char-count">
@@ -720,6 +711,13 @@ function showLinkFlagDialog(linkUrl, initialFlagType) {
     noteCount.textContent = noteTextarea.value.length;
   });
 
+  // Update confidence slider value display
+  const confidenceSliderLink = document.getElementById('misinfo-confidence-slider-link');
+  const confidenceValueLink = document.getElementById('misinfo-confidence-value-link');
+  confidenceSliderLink.addEventListener('input', () => {
+    confidenceValueLink.textContent = confidenceSliderLink.value;
+  });
+
   // Close popup when clicking outside
   setTimeout(() => {
     document.addEventListener('click', handleOutsideClick);
@@ -730,7 +728,7 @@ function showLinkFlagDialog(linkUrl, initialFlagType) {
 async function submitLinkFlag() {
   const flagType = document.getElementById('misinfo-flag-type').value;
   const note = document.getElementById('misinfo-flag-note').value;
-  const confidence = document.querySelector('input[name="confidence"]:checked').value;
+  const confidence = parseInt(document.getElementById('misinfo-confidence-slider-link').value);
 
   if (!linkFlagData) {
     console.error('No link data');

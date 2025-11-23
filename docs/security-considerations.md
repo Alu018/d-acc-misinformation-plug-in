@@ -1,4 +1,4 @@
-# **Cognitive Firewall \- Security Considerations**
+# **Sentinel \- Security Considerations**
 
    1. **Data Integrity and Accuracy** 
       1. **Risk:** Crowdsourced contributions may include false positives, malicious submissions, or low-quality reports.  

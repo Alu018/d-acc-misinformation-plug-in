@@ -245,7 +245,7 @@
   opacity: 0;
   transform: translateY(-5px);
   transition: all 0.2s ease;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .misinfo-flag-info-popup-show {

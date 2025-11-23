@@ -376,8 +376,14 @@ function highlightElement(element, flagType, flagData = null) {
     }
   });
 
-  element.addEventListener('mouseleave', () => {
-    hideFlagInfoPopup();
+  element.addEventListener('mouseleave', (e) => {
+    // Delay hiding to allow moving to popup
+    setTimeout(() => {
+      // Only hide if not hovering over popup
+      if (flagInfoPopup && !flagInfoPopup.matches(':hover')) {
+        hideFlagInfoPopup();
+      }
+    }, 100);
   });
 }
 
@@ -469,6 +475,11 @@ function showFlagInfoPopup(element, event) {
       flagInfoPopup.classList.add('misinfo-flag-info-popup-show');
     }
   }, 10);
+
+  // Add mouseleave to popup to hide when leaving
+  flagInfoPopup.addEventListener('mouseleave', () => {
+    hideFlagInfoPopup();
+  });
 }
 
 function hideFlagInfoPopup() {
@@ -854,6 +865,8 @@ async function checkCurrentUrlFlag() {
 
 // Show warning banner for flagged URL
 function showUrlWarningBanner(flagData) {
+  console.log('Showing warning banner for flag:', flagData);
+
   const banner = document.createElement('div');
   banner.className = 'misinfo-url-warning-banner';
   banner.innerHTML = `
@@ -878,10 +891,15 @@ function showUrlWarningBanner(flagData) {
 
   // Unflag page button functionality
   const unflagBtn = banner.querySelector('.misinfo-banner-unflag');
+  console.log('Unflag button found:', !!unflagBtn, 'Flag ID:', flagData.id);
+
   if (unflagBtn && flagData.id) {
     unflagBtn.addEventListener('click', async () => {
+      console.log('Unflag button clicked');
       await unflagPage(flagData.id, banner);
     });
+  } else if (!flagData.id) {
+    console.warn('Warning: Flag data does not have an ID!', flagData);
   }
 }
 
@@ -930,19 +948,24 @@ async function unflagPage(flagId, banner) {
   }
 
   try {
+    console.log('Unflagging page with ID:', flagId);
     const config = await loadConfig();
     const { supabaseUrl, supabaseKey } = config;
 
     // Delete from database
-    const response = await fetch(
-      `${buildApiUrl(supabaseUrl, 'flagged_links')}?id=eq.${flagId}`,
-      {
-        method: 'DELETE',
-        headers: buildHeaders(supabaseUrl, supabaseKey)
-      }
-    );
+    const deleteUrl = `${buildApiUrl(supabaseUrl, 'flagged_links')}?id=eq.${flagId}`;
+    console.log('DELETE request to:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: buildHeaders(supabaseUrl, supabaseKey)
+    });
+
+    console.log('DELETE response status:', response.status);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DELETE failed:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 

@@ -145,6 +145,10 @@ async function seedDatabase(records) {
   // Insert content
   if (contentRecords.length > 0) {
     console.log(`   Inserting ${contentRecords.length} flagged content items...`);
+
+    // Debug: Show first record
+    console.log('   Debug - First content record:', JSON.stringify(contentRecords[0], null, 2));
+
     const { data, error } = await supabase
       .from('flagged_content')
       .insert(contentRecords)
@@ -152,6 +156,7 @@ async function seedDatabase(records) {
 
     if (error) {
       console.error(`   ❌ Error inserting content:`, error.message);
+      console.error(`   Error details:`, error);
       errorCount += contentRecords.length;
     } else {
       console.log(`   ✓ Inserted ${data.length} flagged content items`);

@@ -29,13 +29,13 @@ ALTER COLUMN note TYPE VARCHAR(500);
 
 -- 5. Verify the changes
 SELECT
-  table_name,
-  column_name,
-  constraint_name,
-  check_clause
+  ccu.table_name,
+  ccu.column_name,
+  cc.constraint_name,
+  cc.check_clause
 FROM information_schema.check_constraints cc
 JOIN information_schema.constraint_column_usage ccu
   ON cc.constraint_name = ccu.constraint_name
-WHERE table_schema = 'public'
-  AND (table_name = 'flagged_links' OR table_name = 'flagged_content')
-ORDER BY table_name, column_name;
+WHERE ccu.table_schema = 'public'
+  AND (ccu.table_name = 'flagged_links' OR ccu.table_name = 'flagged_content')
+ORDER BY ccu.table_name, ccu.column_name;

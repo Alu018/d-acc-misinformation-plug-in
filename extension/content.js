@@ -286,10 +286,10 @@ async function submitFlag() {
   };
 
   try {
-    await saveFlagToDatabase(flagData);
+    const savedFlag = await saveFlagToDatabase(flagData);
 
-    // Highlight the flagged content with confidence level
-    highlightElement(selectedElement, flagType, { ...flagData, created_at: flagData.timestamp });
+    // Highlight the flagged content with the returned ID
+    highlightElement(selectedElement, flagType, { ...savedFlag, created_at: savedFlag.created_at });
 
     // Show success message
     showNotification('Content flagged successfully!');
@@ -562,7 +562,7 @@ async function saveFlagToDatabase(flagData) {
     method: 'POST',
     headers: {
       ...buildHeaders(supabaseUrl, supabaseKey),
-      'Prefer': 'return=minimal'
+      'Prefer': 'return=representation'
     },
     body: JSON.stringify(flagData)
   });
@@ -570,6 +570,10 @@ async function saveFlagToDatabase(flagData) {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  // Return the created record (includes the ID)
+  const result = await response.json();
+  return result[0]; // PostgREST returns an array
 }
 
 // Get flags for current page
@@ -798,10 +802,13 @@ async function submitLinkFlag() {
   };
 
   try {
-    await saveLinkFlagToDatabase(flagData);
+    const savedFlag = await saveLinkFlagToDatabase(flagData);
     showNotification('Link flagged successfully!');
     closePopup();
     linkFlagData = null;
+
+    // Show warning banner with the returned flag data (includes ID)
+    showUrlWarningBanner(savedFlag);
   } catch (error) {
     console.error('Error saving link flag:', error);
     showNotification('Error flagging link. Please try again.', 'error');
@@ -817,7 +824,7 @@ async function saveLinkFlagToDatabase(flagData) {
     method: 'POST',
     headers: {
       ...buildHeaders(supabaseUrl, supabaseKey),
-      'Prefer': 'return=minimal'
+      'Prefer': 'return=representation'
     },
     body: JSON.stringify(flagData)
   });
@@ -825,6 +832,10 @@ async function saveLinkFlagToDatabase(flagData) {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  // Return the created record (includes the ID)
+  const result = await response.json();
+  return result[0]; // PostgREST returns an array
 }
 
 // Check if current URL is flagged

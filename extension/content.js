@@ -447,11 +447,10 @@ async function submitFlag() {
         flagData.llm_error = verificationError.message;
       }
     }
+    const savedFlag = await saveFlagToDatabase(flagData);
 
-    await saveFlagToDatabase(flagData);
-
-    // Highlight the flagged content with confidence level
-    highlightElement(selectedElement, flagType, { ...flagData, created_at: flagData.timestamp });
+    // Highlight the flagged content with the returned ID
+    highlightElement(selectedElement, flagType, { ...savedFlag, created_at: savedFlag.created_at });
 
     // Show success message
     showNotification('Content flagged successfully!');
@@ -529,9 +528,10 @@ function highlightElement(element, flagType, flagData = null) {
   if (flagData) {
     element.setAttribute('data-flag-note', flagData.note || '');
     element.setAttribute('data-flag-date', flagData.created_at || flagData.timestamp || '');
-    element.setAttribute('data-flag-confidence', flagData.confidence || 'certain');
+    element.setAttribute('data-flag-confidence', flagData.confidence || '50');
+    element.setAttribute('data-flag-id', flagData.id || '');
 
-    // Add confidence class for styling
+    // Add confidence class for styling (legacy support)
     if (flagData.confidence === 'uncertain') {
       element.classList.add('misinfo-uncertain');
     }
@@ -544,8 +544,14 @@ function highlightElement(element, flagType, flagData = null) {
     }
   });
 
-  element.addEventListener('mouseleave', () => {
-    hideFlagInfoPopup();
+  element.addEventListener('mouseleave', (e) => {
+    // Delay hiding to allow moving to popup
+    setTimeout(() => {
+      // Only hide if not hovering over popup
+      if (flagInfoPopup && !flagInfoPopup.matches(':hover')) {
+        hideFlagInfoPopup();
+      }
+    }, 100);
   });
 }
 
@@ -572,7 +578,8 @@ function showFlagInfoPopup(element, event) {
   const flagType = element.getAttribute('data-flag-type');
   const note = element.getAttribute('data-flag-note');
   const date = element.getAttribute('data-flag-date');
-  const confidence = element.getAttribute('data-flag-confidence') || 'certain';
+  const confidence = element.getAttribute('data-flag-confidence') || '50';
+  const flagId = element.getAttribute('data-flag-id');
 
   // Create popup
   flagInfoPopup = document.createElement('div');
@@ -584,19 +591,33 @@ function showFlagInfoPopup(element, event) {
     dateStr = flagDate.toLocaleDateString() + ' ' + flagDate.toLocaleTimeString();
   }
 
-  const confidenceText = confidence === 'uncertain' ? ' (Uncertain)' : '';
+  const confidenceValue = parseInt(confidence);
+  let confidenceLabel = 'Medium';
+  if (confidenceValue >= 67) confidenceLabel = 'High';
+  else if (confidenceValue <= 33) confidenceLabel = 'Low';
+  const confidenceText = ` (${confidenceValue}% - ${confidenceLabel})`;
 
   flagInfoPopup.innerHTML = `
     <div class="misinfo-flag-info-content">
       <div class="misinfo-flag-info-header">
-        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}${confidence === 'uncertain' ? ' misinfo-flag-badge-uncertain' : ''}">${flagType}${confidenceText}</span>
+        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}">${flagType}${confidenceText}</span>
       </div>
       ${note ? `<div class="misinfo-flag-info-note">${escapeHtml(note)}</div>` : '<div class="misinfo-flag-info-note-empty">No additional notes</div>'}
       ${dateStr ? `<div class="misinfo-flag-info-date">Flagged: ${dateStr}</div>` : ''}
+      <button class="misinfo-unflag-button" data-flag-id="${flagId || ''}">Unflag this content</button>
     </div>
   `;
 
   document.body.appendChild(flagInfoPopup);
+
+  // Add unflag button listener
+  const unflagBtn = flagInfoPopup.querySelector('.misinfo-unflag-button');
+  if (unflagBtn && flagId) {
+    unflagBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await unflagContent(flagId, element);
+    });
+  }
 
   // Position popup near the element
   const rect = element.getBoundingClientRect();
@@ -622,6 +643,11 @@ function showFlagInfoPopup(element, event) {
       flagInfoPopup.classList.add('misinfo-flag-info-popup-show');
     }
   }, 10);
+
+  // Add mouseleave to popup to hide when leaving
+  flagInfoPopup.addEventListener('mouseleave', () => {
+    hideFlagInfoPopup();
+  });
 }
 
 function hideFlagInfoPopup() {
@@ -704,7 +730,7 @@ async function saveFlagToDatabase(flagData) {
     method: 'POST',
     headers: {
       ...buildHeaders(supabaseUrl, supabaseKey),
-      'Prefer': 'return=minimal'
+      'Prefer': 'return=representation'
     },
     body: JSON.stringify(flagData)
   });
@@ -712,6 +738,10 @@ async function saveFlagToDatabase(flagData) {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  // Return the created record (includes the ID)
+  const result = await response.json();
+  return result[0]; // PostgREST returns an array
 }
 
 // Get flags for current page
@@ -940,10 +970,13 @@ async function submitLinkFlag() {
   };
 
   try {
-    await saveLinkFlagToDatabase(flagData);
+    const savedFlag = await saveLinkFlagToDatabase(flagData);
     showNotification('Link flagged successfully!');
     closePopup();
     linkFlagData = null;
+
+    // Show warning banner with the returned flag data (includes ID)
+    showUrlWarningBanner(savedFlag);
   } catch (error) {
     console.error('Error saving link flag:', error);
     showNotification('Error flagging link. Please try again.', 'error');
@@ -959,7 +992,7 @@ async function saveLinkFlagToDatabase(flagData) {
     method: 'POST',
     headers: {
       ...buildHeaders(supabaseUrl, supabaseKey),
-      'Prefer': 'return=minimal'
+      'Prefer': 'return=representation'
     },
     body: JSON.stringify(flagData)
   });
@@ -967,6 +1000,10 @@ async function saveLinkFlagToDatabase(flagData) {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  // Return the created record (includes the ID)
+  const result = await response.json();
+  return result[0]; // PostgREST returns an array
 }
 
 // Check if current URL is flagged
@@ -1007,6 +1044,8 @@ async function checkCurrentUrlFlag() {
 
 // Show warning banner for flagged URL
 function showUrlWarningBanner(flagData) {
+  console.log('Showing warning banner for flag:', flagData);
+
   const banner = document.createElement('div');
   banner.className = 'misinfo-url-warning-banner';
   banner.innerHTML = `
@@ -1017,6 +1056,7 @@ function showUrlWarningBanner(flagData) {
         ${flagData.note ? `<br><em>${flagData.note}</em>` : ''}
       </div>
       <button class="misinfo-banner-close">×</button>
+      ${flagData.id ? `<button class="misinfo-banner-unflag" data-flag-id="${flagData.id}">Unflag Page</button>` : ''}
     </div>
   `;
 
@@ -1027,6 +1067,117 @@ function showUrlWarningBanner(flagData) {
   banner.querySelector('.misinfo-banner-close').addEventListener('click', () => {
     banner.remove();
   });
+
+  // Unflag page button functionality
+  const unflagBtn = banner.querySelector('.misinfo-banner-unflag');
+  console.log('Unflag button found:', !!unflagBtn, 'Flag ID:', flagData.id);
+
+  if (unflagBtn && flagData.id) {
+    unflagBtn.addEventListener('click', async () => {
+      console.log('Unflag button clicked');
+      await unflagPage(flagData.id, banner);
+    });
+  } else if (!flagData.id) {
+    console.warn('Warning: Flag data does not have an ID!', flagData);
+  }
+}
+
+// Unflag content - remove flag from database and remove highlight
+async function unflagContent(flagId, element) {
+  if (!flagId) {
+    showNotification('Cannot unflag: No flag ID found', 'error');
+    return;
+  }
+
+  try {
+    // Hide the popup immediately for better UX
+    hideFlagInfoPopup();
+
+    const config = await loadConfig();
+    const { supabaseUrl, supabaseKey } = config;
+
+    // Delete from database
+    const response = await fetch(
+      `${buildApiUrl(supabaseUrl, 'flagged_content')}?id=eq.${flagId}`,
+      {
+        method: 'DELETE',
+        headers: buildHeaders(supabaseUrl, supabaseKey)
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Remove highlight from element
+    removeHighlight(element);
+
+    showNotification('Content unflagged successfully!');
+  } catch (error) {
+    console.error('Error unflagging content:', error);
+    showNotification('Error unflagging content. Please try again.', 'error');
+  }
+}
+
+// Unflag page - remove page flag from database and remove banner
+async function unflagPage(flagId, banner) {
+  if (!flagId) {
+    showNotification('Cannot unflag page: No flag ID found', 'error');
+    return;
+  }
+
+  try {
+    console.log('Unflagging page with ID:', flagId);
+    const config = await loadConfig();
+    const { supabaseUrl, supabaseKey } = config;
+
+    // Delete from database
+    const deleteUrl = `${buildApiUrl(supabaseUrl, 'flagged_links')}?id=eq.${flagId}`;
+    console.log('DELETE request to:', deleteUrl);
+
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: buildHeaders(supabaseUrl, supabaseKey)
+    });
+
+    console.log('DELETE response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DELETE failed:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Remove banner
+    if (banner) {
+      banner.remove();
+    }
+
+    showNotification('Page unflagged successfully!');
+  } catch (error) {
+    console.error('Error unflagging page:', error);
+    showNotification('Error unflagging page. Please try again.', 'error');
+  }
+}
+
+// Remove highlight from an element
+function removeHighlight(element) {
+  if (!element) return;
+
+  // Remove highlight classes and attributes
+  element.classList.remove('misinfo-highlighted', 'misinfo-uncertain');
+  element.removeAttribute('data-flag-type');
+  element.removeAttribute('data-flag-note');
+  element.removeAttribute('data-flag-date');
+  element.removeAttribute('data-flag-confidence');
+  element.removeAttribute('data-flag-id');
+
+  // If element is a <strong> tag created by text highlighting, unwrap it
+  if (element.tagName === 'STRONG' && element.parentElement) {
+    const parent = element.parentElement;
+    const textContent = element.textContent;
+    parent.innerHTML = parent.innerHTML.replace(element.outerHTML, textContent);
+  }
 }
 
 // Initialize when DOM is ready

@@ -245,7 +245,7 @@
   opacity: 0;
   transform: translateY(-5px);
   transition: all 0.2s ease;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .misinfo-flag-info-popup-show {
@@ -278,6 +278,11 @@
 
 .misinfo-flag-badge-scam {
   background-color: #ff5722;
+  color: white;
+}
+
+.misinfo-flag-badge-fake_profile {
+  background-color: #9c27b0;
   color: white;
 }
 
@@ -323,6 +328,49 @@
   font-size: 11px;
   color: #666;
   text-align: right;
+  margin-bottom: 8px;
+}
+
+/* Unflag button */
+.misinfo-unflag-button {
+  width: 100%;
+  padding: 8px 16px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 8px;
+  pointer-events: auto;
+}
+
+.misinfo-unflag-button:hover {
+  background-color: #d32f2f;
+}
+
+.misinfo-unflag-button:active {
+  background-color: #c62828;
+}
+
+.misinfo-banner-unflag {
+  padding: 6px 12px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.misinfo-banner-unflag:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 /* URL Warning Banner */

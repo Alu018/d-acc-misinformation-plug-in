@@ -13,3 +13,14 @@ export interface FlaggedContent {
   selector: string | null;
   created_at: string;
 }
+
+export interface FlaggedLink {
+  id: number;
+  url: string;
+  flag_type: FlagType;
+  confidence: number; // 0-100 integer
+  note: string | null;
+  flagged_by_url: string | null;
+  username: string | null;
+  created_at: string;
+}

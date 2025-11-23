@@ -1,11 +1,11 @@
 'use client';
 
-import { FlaggedContent } from '@/lib/types';
+import { FlaggedLink } from '@/lib/types';
 import { format } from 'date-fns';
 import { useState } from 'react';
 
-interface FlaggedContentTableProps {
-  data: FlaggedContent[];
+interface FlaggedLinksTableProps {
+  data: FlaggedLink[];
   onDelete: (id: number) => Promise<void>;
 }
 
@@ -14,13 +14,6 @@ const flagTypeColors = {
   misinformation: 'bg-orange-100 text-orange-800 border-orange-300',
   fake_profile: 'bg-purple-100 text-purple-800 border-purple-300',
   other: 'bg-gray-100 text-gray-800 border-gray-300',
-};
-
-const contentTypeIcons = {
-  text: '📝',
-  image: '🖼️',
-  video: '🎥',
-  other: '📄',
 };
 
 const getConfidenceBadge = (confidence: number) => {
@@ -33,7 +26,7 @@ const getConfidenceBadge = (confidence: number) => {
   }
 };
 
-export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTableProps) {
+export default function FlaggedLinksTable({ data, onDelete }: FlaggedLinksTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -49,13 +42,8 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
     });
   };
 
-  const truncateText = (text: string, maxLength: number = 100) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
-
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this flagged content?')) {
+    if (!confirm('Are you sure you want to delete this flagged link?')) {
       return;
     }
 
@@ -70,14 +58,16 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
     }
   };
 
+  const truncateText = (text: string, maxLength: number = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
-            </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Flag Type
             </th>
@@ -85,10 +75,10 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
               Confidence
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Content
+              Flagged URL
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Page URL
+              Flagged By
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Date
@@ -103,11 +93,6 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
             const isExpanded = expandedRows.has(item.id);
             return (
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-2xl" title={item.content_type}>
-                    {contentTypeIcons[item.content_type]}
-                  </span>
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold border ${
@@ -127,9 +112,15 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
                   </span>
                 </td>
                 <td className="px-6 py-4 max-w-md">
-                  <div className="text-sm text-gray-900">
-                    {isExpanded ? item.content : truncateText(item.content)}
-                  </div>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 hover:underline text-sm block"
+                    title={item.url}
+                  >
+                    {isExpanded ? item.url : truncateText(item.url, 60)}
+                  </a>
                   {item.note && (
                     <div className="text-xs text-gray-500 mt-1 italic">
                       Note: {isExpanded ? item.note : truncateText(item.note, 50)}
@@ -137,15 +128,19 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
                   )}
                 </td>
                 <td className="px-6 py-4 max-w-xs">
-                  <a
-                    href={item.page_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 hover:underline text-sm truncate block"
-                    title={item.page_url}
-                  >
-                    {new URL(item.page_url).hostname}
-                  </a>
+                  {item.flagged_by_url ? (
+                    <a
+                      href={item.flagged_by_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline text-sm truncate block"
+                      title={item.flagged_by_url}
+                    >
+                      {new URL(item.flagged_by_url).hostname}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400 text-sm">N/A</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {format(new Date(item.created_at), 'MMM d, yyyy')}
@@ -178,7 +173,7 @@ export default function FlaggedContentTable({ data, onDelete }: FlaggedContentTa
       </table>
       {data.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No flagged content found
+          No flagged links found
         </div>
       )}
     </div>

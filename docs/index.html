@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Misinformation Detector</title>
+  <title>Community-Powered AI Threat Detector</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -20,7 +20,7 @@
       margin-bottom: 20px;
       font-size: 32px;
     }
-    
+
     /* Tabs */
     .tabs {
       display: flex;
@@ -159,7 +159,7 @@
     .refresh-btn:hover {
       background: #5568d3;
     }
-    
+
     /* Docs Styles */
     .docs-content {
       line-height: 1.6;
@@ -183,7 +183,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>🛡️ Misinformation Detector</h1>
+    <h1>🛡️ AI Threat Detector</h1>
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
@@ -232,11 +232,11 @@
     <div id="docs-view" class="tab-content">
       <div class="section docs-content">
         <h2>Documentation</h2>
-        <p>Welcome to the Misinformation Detector documentation.</p>
-        
+        <p>Welcome to the Community-Powered AI Threat Detector documentation.</p>
+
         <h3>Overview</h3>
-        <p>The Misinformation Detector is a tool designed to help users identify and flag potentially misleading or harmful content on the web. It consists of a browser extension and a web dashboard.</p>
-        
+        <p>The AI threat Detector is a tool designed to help users identify and flag potentially misleading or harmful content on the web. It consists of a browser extension and a web dashboard.</p>
+
         <h3>How it Works</h3>
         <p>Users can install the browser extension to:</p>
         <ul>
@@ -263,7 +263,7 @@
       // Update buttons
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
-      
+
       // Update content
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
       document.getElementById(`${tabName}-view`).classList.add('active');
@@ -272,21 +272,21 @@
     async function init() {
       try {
         const config = await fetch('config.json').then(r => r.json());
-        
+
         if (!config.supabaseUrl || !config.supabaseKey) {
           throw new Error('Missing Supabase configuration in config.json');
         }
 
         const { createClient } = supabase;
         _supabase = createClient(config.supabaseUrl, config.supabaseKey);
-        
+
         loadData();
         // Auto-refresh every 30 seconds
         setInterval(loadData, 30000);
 
       } catch (error) {
         console.error('Initialization error:', error);
-        document.getElementById('links-content').innerHTML = 
+        document.getElementById('links-content').innerHTML =
           `<div class="error">Error initializing: ${error.message}. Please ensure config.json exists and contains valid credentials.</div>`;
       }
     }

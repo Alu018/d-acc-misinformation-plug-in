@@ -1,6 +1,6 @@
-# Misinformation Detector - Web Application
+# Community-Powered AI Threat Detector - Web Application
 
-A Next.js web application that provides a public interface to browse and search flagged content from the Misinformation Detector Chrome Extension.
+A Next.js web application that provides a public interface to browse and search flagged content from the AI Threat Detector Chrome Extension.
 
 ## Features
 

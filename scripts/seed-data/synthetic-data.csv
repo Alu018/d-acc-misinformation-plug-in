@@ -1,3 +1,7 @@
+# SYNTHETIC DATA - FOR TESTING/DEMONSTRATION ONLY
+# WARNING: This data is COMPLETELY FICTIONAL and created for testing purposes.
+# All URLs, content, and examples are synthetic and do not represent real threats.
+# DO NOT visit any URLs listed here - they are fake examples for demonstration.
 type,flag_type,url,content,content_type,page_url,note,confidence,flagged_by_url
 link,scam,https://bit.ly/free-iphone-14-giveaway,,,https://reddit.com/r/technology/comments/abc123,Suspicious shortened URL promising free iPhone,85,https://reddit.com/r/technology
 link,misinformation,https://naturalnewsdaily.com/vaccines-cause-autism-study,,,https://facebook.com/groups/parentconcerns,Debunked vaccine misinformation,92,https://facebook.com/groups/parentconcerns

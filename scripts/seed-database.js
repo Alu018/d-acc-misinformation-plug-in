@@ -27,7 +27,7 @@ const supabase = createClient(config.supabaseUrl, config.supabaseKey);
 // Parse CSV file
 function parseCSV(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
-  const lines = content.trim().split('\n');
+  const lines = content.trim().split('\n').filter(line => !line.startsWith('#')); // Skip comment lines
   const headers = lines[0].split(',');
 
   return lines.slice(1).map(line => {

@@ -343,7 +343,7 @@ function highlightElement(element, flagType, flagData = null) {
   }
 
   // If content type is text, only highlight the matching text
-  if (flagData.content_type == 'text') {
+  if (flagData && flagData.content_type == 'text') {
       const content = flagData.content;
       console.log("flag data content: ", content)
       const originalText = element.innerHTML;
@@ -360,9 +360,10 @@ function highlightElement(element, flagType, flagData = null) {
   if (flagData) {
     element.setAttribute('data-flag-note', flagData.note || '');
     element.setAttribute('data-flag-date', flagData.created_at || flagData.timestamp || '');
-    element.setAttribute('data-flag-confidence', flagData.confidence || 'certain');
+    element.setAttribute('data-flag-confidence', flagData.confidence || '50');
+    element.setAttribute('data-flag-id', flagData.id || '');
 
-    // Add confidence class for styling
+    // Add confidence class for styling (legacy support)
     if (flagData.confidence === 'uncertain') {
       element.classList.add('misinfo-uncertain');
     }
@@ -403,7 +404,8 @@ function showFlagInfoPopup(element, event) {
   const flagType = element.getAttribute('data-flag-type');
   const note = element.getAttribute('data-flag-note');
   const date = element.getAttribute('data-flag-date');
-  const confidence = element.getAttribute('data-flag-confidence') || 'certain';
+  const confidence = element.getAttribute('data-flag-confidence') || '50';
+  const flagId = element.getAttribute('data-flag-id');
 
   // Create popup
   flagInfoPopup = document.createElement('div');
@@ -415,19 +417,33 @@ function showFlagInfoPopup(element, event) {
     dateStr = flagDate.toLocaleDateString() + ' ' + flagDate.toLocaleTimeString();
   }
 
-  const confidenceText = confidence === 'uncertain' ? ' (Uncertain)' : '';
+  const confidenceValue = parseInt(confidence);
+  let confidenceLabel = 'Medium';
+  if (confidenceValue >= 67) confidenceLabel = 'High';
+  else if (confidenceValue <= 33) confidenceLabel = 'Low';
+  const confidenceText = ` (${confidenceValue}% - ${confidenceLabel})`;
 
   flagInfoPopup.innerHTML = `
     <div class="misinfo-flag-info-content">
       <div class="misinfo-flag-info-header">
-        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}${confidence === 'uncertain' ? ' misinfo-flag-badge-uncertain' : ''}">${flagType}${confidenceText}</span>
+        <span class="misinfo-flag-badge misinfo-flag-badge-${flagType}">${flagType}${confidenceText}</span>
       </div>
       ${note ? `<div class="misinfo-flag-info-note">${escapeHtml(note)}</div>` : '<div class="misinfo-flag-info-note-empty">No additional notes</div>'}
       ${dateStr ? `<div class="misinfo-flag-info-date">Flagged: ${dateStr}</div>` : ''}
+      <button class="misinfo-unflag-button" data-flag-id="${flagId || ''}">Unflag this content</button>
     </div>
   `;
 
   document.body.appendChild(flagInfoPopup);
+
+  // Add unflag button listener
+  const unflagBtn = flagInfoPopup.querySelector('.misinfo-unflag-button');
+  if (unflagBtn && flagId) {
+    unflagBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await unflagContent(flagId, element);
+    });
+  }
 
   // Position popup near the element
   const rect = element.getBoundingClientRect();
@@ -848,6 +864,7 @@ function showUrlWarningBanner(flagData) {
         ${flagData.note ? `<br><em>${flagData.note}</em>` : ''}
       </div>
       <button class="misinfo-banner-close">×</button>
+      ${flagData.id ? `<button class="misinfo-banner-unflag" data-flag-id="${flagData.id}">Unflag Page</button>` : ''}
     </div>
   `;
 
@@ -858,6 +875,107 @@ function showUrlWarningBanner(flagData) {
   banner.querySelector('.misinfo-banner-close').addEventListener('click', () => {
     banner.remove();
   });
+
+  // Unflag page button functionality
+  const unflagBtn = banner.querySelector('.misinfo-banner-unflag');
+  if (unflagBtn && flagData.id) {
+    unflagBtn.addEventListener('click', async () => {
+      await unflagPage(flagData.id, banner);
+    });
+  }
+}
+
+// Unflag content - remove flag from database and remove highlight
+async function unflagContent(flagId, element) {
+  if (!flagId) {
+    showNotification('Cannot unflag: No flag ID found', 'error');
+    return;
+  }
+
+  try {
+    // Hide the popup immediately for better UX
+    hideFlagInfoPopup();
+
+    const config = await loadConfig();
+    const { supabaseUrl, supabaseKey } = config;
+
+    // Delete from database
+    const response = await fetch(
+      `${buildApiUrl(supabaseUrl, 'flagged_content')}?id=eq.${flagId}`,
+      {
+        method: 'DELETE',
+        headers: buildHeaders(supabaseUrl, supabaseKey)
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Remove highlight from element
+    removeHighlight(element);
+
+    showNotification('Content unflagged successfully!');
+  } catch (error) {
+    console.error('Error unflagging content:', error);
+    showNotification('Error unflagging content. Please try again.', 'error');
+  }
+}
+
+// Unflag page - remove page flag from database and remove banner
+async function unflagPage(flagId, banner) {
+  if (!flagId) {
+    showNotification('Cannot unflag page: No flag ID found', 'error');
+    return;
+  }
+
+  try {
+    const config = await loadConfig();
+    const { supabaseUrl, supabaseKey } = config;
+
+    // Delete from database
+    const response = await fetch(
+      `${buildApiUrl(supabaseUrl, 'flagged_links')}?id=eq.${flagId}`,
+      {
+        method: 'DELETE',
+        headers: buildHeaders(supabaseUrl, supabaseKey)
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Remove banner
+    if (banner) {
+      banner.remove();
+    }
+
+    showNotification('Page unflagged successfully!');
+  } catch (error) {
+    console.error('Error unflagging page:', error);
+    showNotification('Error unflagging page. Please try again.', 'error');
+  }
+}
+
+// Remove highlight from an element
+function removeHighlight(element) {
+  if (!element) return;
+
+  // Remove highlight classes and attributes
+  element.classList.remove('misinfo-highlighted', 'misinfo-uncertain');
+  element.removeAttribute('data-flag-type');
+  element.removeAttribute('data-flag-note');
+  element.removeAttribute('data-flag-date');
+  element.removeAttribute('data-flag-confidence');
+  element.removeAttribute('data-flag-id');
+
+  // If element is a <strong> tag created by text highlighting, unwrap it
+  if (element.tagName === 'STRONG' && element.parentElement) {
+    const parent = element.parentElement;
+    const textContent = element.textContent;
+    parent.innerHTML = parent.innerHTML.replace(element.outerHTML, textContent);
+  }
 }
 
 // Initialize when DOM is ready

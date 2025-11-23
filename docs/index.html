@@ -508,7 +508,7 @@
     // Event delegation for delete buttons
     document.addEventListener('click', function(e) {
       if (e.target.classList.contains('delete-btn')) {
-        const id = parseInt(e.target.getAttribute('data-id'));
+        const id = e.target.getAttribute('data-id'); // Keep as string (UUID)
         const type = e.target.getAttribute('data-type');
 
         if (type === 'link') {

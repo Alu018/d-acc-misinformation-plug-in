@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FlaggedContent, ContentType, FlagType } from '@/lib/types';
+import { FlaggedContent, FlaggedLink, ContentType, FlagType } from '@/lib/types';
 import FlaggedContentTable from '@/components/FlaggedContentTable';
+import FlaggedLinksTable from '@/components/FlaggedLinksTable';
 import FilterBar from '@/components/FilterBar';
 import StatsBar from '@/components/StatsBar';
 
 export default function Home() {
   const [data, setData] = useState<FlaggedContent[]>([]);
   const [filteredData, setFilteredData] = useState<FlaggedContent[]>([]);
+  const [linksData, setLinksData] = useState<FlaggedLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,14 +32,25 @@ export default function Home() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const { data: flaggedData, error } = await supabase
+
+      // Fetch flagged content
+      const { data: flaggedData, error: contentError } = await supabase
         .from('flagged_content')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (contentError) throw contentError;
+
+      // Fetch flagged links
+      const { data: flaggedLinks, error: linksError } = await supabase
+        .from('flagged_links')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (linksError) throw linksError;
 
       setData(flaggedData || []);
+      setLinksData(flaggedLinks || []);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -82,6 +95,40 @@ export default function Home() {
     }
 
     setFilteredData(filtered);
+  };
+
+  const handleDeleteContent = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('flagged_content')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setData((prevData) => prevData.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error('Error deleting content:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteLink = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('flagged_links')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLinksData((prevData) => prevData.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error('Error deleting link:', err);
+      throw err;
+    }
   };
 
   return (
@@ -140,7 +187,21 @@ export default function Home() {
               totalCount={filteredData.length}
             />
 
-            <FlaggedContentTable data={filteredData} />
+            {/* Flagged Content Section */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Flagged Content
+              </h2>
+              <FlaggedContentTable data={filteredData} onDelete={handleDeleteContent} />
+            </div>
+
+            {/* Flagged Links Section */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Flagged Links
+              </h2>
+              <FlaggedLinksTable data={linksData} onDelete={handleDeleteLink} />
+            </div>
           </>
         )}
       </main>
